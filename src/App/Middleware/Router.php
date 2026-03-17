@@ -13,29 +13,72 @@ use Psr\Http\Server\{
 	RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
-class Router implements \ArrayAccess, PsrMiddlewareInterface {
+class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface {
+	protected array $named_routes = [];
+
 	public function __construct(
-		protected Route $root = new Route('/'),
+		protected(set) Route $root = new Route('/'),
 	) {
 	}
 
-	public function insert(string $path, mixed $handler): Route {
+	public function contains(Route $route): bool {
+		if ($this->root === $route) {
+			return true;
+		}
+
+		return $this->root->contains($route);
+	}
+
+	public function getIterator(): \Traversable {
+		yield from $this->root->getIterator();
+	}
+
+	public function insert(string $path, mixed $handler, ?string $name = null): Route {
+		if ($path === '/') {
+			$this->root = new Route('/', $handler);
+		}
+
 		$parts = $this->parsePath($path);
 		$current = $this->root;
-		$route_path = null;
+		$route_path = rtrim($current->path, '/');
 
 		foreach ($parts as $part) {
 			$route_path .= '/' . $part;
 
 			if (!isset($current[$part])) {
-				$route = new Route($route_path);
+				$route = new Route($route_path, $handler);
 				$current[$part] = $route;
 			}
 
 			$current = $current[$part];
 		}
 
-		$current->handler = $handler;
+		if ($name) {
+			$this->named_routes[$name] = $current;
+		}
+
+		return $current;
+	}
+
+	public function insertRoute(Route $route, ?string $name = null): Route {
+		if ($route->path === '/') {
+			$this->root = $route;
+		}
+
+		$parts = $this->parsePath($route->path);
+		$current = $this->root;
+
+		foreach ($parts as $part) {
+			if (!isset($current[$part])) {
+				$current[$part] = $route;
+			}
+
+			$current = $current[$part];
+		}
+
+		if ($name) {
+			$this->named_routes[$name] = $current;
+		}
 
 		return $current;
 	}
@@ -57,6 +100,10 @@ class Router implements \ArrayAccess, PsrMiddlewareInterface {
 		return $parent;
 	}
 
+	public function matchName(string $name): ?Route {
+		return $this->named_routes[$name] ?? null;
+	}
+
 	public function offsetExists(mixed $offset): bool {
 		return (bool)$this->match($offset);
 	}
@@ -70,10 +117,11 @@ class Router implements \ArrayAccess, PsrMiddlewareInterface {
 	}
 
 	public function offsetUnset(mixed $offset): void {
+		throw new \BadMethodCallException('Cannot unset route!');
 	}
 
 	protected function parsePath(string $path): array {
-		return \array_filter(\explode('/', $path));
+		return \array_filter(\explode('/', ltrim($path, '/')));
 	}
 
 	public function process(
@@ -88,5 +136,11 @@ class Router implements \ArrayAccess, PsrMiddlewareInterface {
 		}
 
 		return $route->handle($request, $app);
+	}
+
+	public function setName(string $name, Route $route): static {
+		$this->named_routes[$name] = $route;
+
+		return $this;
 	}
 }

@@ -15,12 +15,30 @@ use Psr\Http\Message\{
 };
 use Psr\Http\Server\RequestHandlerInterface as PsrRequestHandlerInterface;
 
-class Route implements \ArrayAccess, PsrRequestHandlerInterface {
+class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterface {
 	public function __construct(
-		public ?string $path = null,
-		public mixed $handler = null,
+		public readonly ?string $path = null,
+		public readonly mixed $handler = null,
 		protected array $children = [],
 	) {
+	}
+
+	public function contains(Route $route): bool {
+		foreach ($this as $child) {
+			if ($child === $route) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public function getIterator(): \Traversable {
+		yield $this;
+
+		foreach ($this->children as $route) {
+			yield from $route->getIterator();
+		}
 	}
 
 	public function handle(PsrServerRequestInterface $request, ?App $app = null): PsrResponseInterface {
@@ -129,6 +147,16 @@ class Route implements \ArrayAccess, PsrRequestHandlerInterface {
 			$arguments = Arguments::fromCallable($handler, $values);
 			return \call_user_func($handler, ...$arguments->resolve($this));
 		};
+	}
+
+	public function toUrl(...$params) {
+		$pattern = new RoutePattern($this->path);
+		$pattern->compile();
+
+		if ($pattern->hasParameters()) {
+		}
+
+		return $this->path;
 	}
 
 	public function withHandler(mixed $handler): static {

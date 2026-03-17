@@ -11,7 +11,7 @@ class RoutePattern {
 	private string $regex = '';
 
 	public function __construct(
-		private string $pattern,
+		private readonly string $pattern,
 	) {
 	}
 
@@ -20,7 +20,7 @@ class RoutePattern {
 			return $this->regex;
 		}
 
-		if ($this->has_parameters = static::hasParameters($this->pattern)) {
+		if ($this->has_parameters = static::checkParameters($this->pattern)) {
 			if (preg_match_all('#\{([a-zA-Z_]\w+)\}#', $this->pattern, $matches)) {
 				[$matches, $groups] = $matches;
 				$this->groups = $groups;
@@ -48,8 +48,12 @@ class RoutePattern {
 		return $this->matches;
 	}
 
-	static public function hasParameters(string $pattern): bool {
+	static public function checkParameters(string $pattern): bool {
 		return \str_contains($pattern, '{');
+	}
+
+	public function hasParameters(): bool {
+		return $this->has_parameters;
 	}
 
 	public function matches(string $path): bool {
