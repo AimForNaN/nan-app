@@ -62,13 +62,7 @@ class Container extends \NaN\Collections\Collection implements ContainerInterfac
 			}
 		}
 
-		foreach ($this->delegates as $delegate) {
-			if ($delegate->has($id)) {
-				return true;
-			}
-		}
-
-		return false;
+		return \array_any($this->delegates, fn($delegate) => $delegate->has($id));
 	}
 
 	public function offsetExists(mixed $offset): bool {
