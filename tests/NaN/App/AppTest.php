@@ -37,9 +37,13 @@ describe('App', function () {
 		$app->use($routes);
 
 		$rsp = $app->handle(new Request('GET', '/'));
-		expect($rsp)->toBeInstanceOf(PsrResponseInterface::class);
-		expect($rsp->getStatusCode())->toBe(200);
-		expect((string)$rsp->getBody())->toBe('good');
+		expect($rsp)
+			->toBeInstanceOf(PsrResponseInterface::class)
+			->and($rsp->getStatusCode())
+				->toBe(200)
+			->and((string)$rsp->getBody())
+				->toBe('good')
+		;
 	});
 
 	test('Route param injection (closure)', function () {
@@ -53,18 +57,25 @@ describe('App', function () {
 		$app->use($routes);
 
 		$rsp = $app->handle(new Request('GET', '/1'));
-		expect($rsp)->toBeInstanceOf(PsrResponseInterface::class);
-		expect($rsp->getStatusCode())->toBe(200);
-		expect((string)$rsp->getBody())->toBe('good');
+		expect($rsp)
+			->toBeInstanceOf(PsrResponseInterface::class)
+			->and($rsp->getStatusCode())
+				->toBe(200)
+			->and((string)$rsp->getBody())
+				->toBe('good')
+		;
 	});
 
 	test('Route controllers', function () {
 		class TestController implements ControllerInterface, GetControllerInterface {
 			use ControllerTrait;
 
-			public function get(int $id = null): PsrResponseInterface {
-				expect($id)->toBe(1);
-				expect($this)->toBeInstanceOf(TestController::class);
+			public function get(?int $id = null): PsrResponseInterface {
+				expect($id)
+					->toBe(1)
+					->and($this)
+						->toBeInstanceOf(TestController::class)
+				;
 				return new Response(body: 'good');
 			}
 		}
@@ -76,7 +87,10 @@ describe('App', function () {
 		$app->use($routes);
 
 		$rsp = $app->handle(new Request('GET', '/1'));
-		expect($rsp->getStatusCode())->toBe(200);
-		expect((string)$rsp->getBody())->toBe('good');
+		expect($rsp->getStatusCode())
+			->toBe(200)
+			->and((string)$rsp->getBody())
+				->toBe('good')
+		;
 	});
 });
