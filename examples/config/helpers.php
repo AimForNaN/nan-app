@@ -2,10 +2,7 @@
 
 use NaN\App;
 use NaN\App\TemplateEngine;
-use NaN\Database\{
-	Drivers\SqlDriver,
-	Query\Builders\SqlQueryBuilder,
-};
+use NaN\Database\Drivers\SqlDriver;
 use NaN\Env;
 
 function app(): App {
@@ -22,17 +19,25 @@ function app(): App {
 	return $app;
 }
 
-function db(): SqlQueryBuilder {
+/**
+ * @throws Exception
+ */
+function db(): \NaN\Database\Interfaces\ConnectionInterface {
 	static $db = null;
 
 	if (!$db) {
-		$db = new SqlDriver([
+		$driver = new SqlDriver();
+		$db = $driver->createConnection([
 			'driver' => 'sqlite',
 			'sqlite' => ':memory:',
 		]);
 	}
 
-	return $db->createConnection();
+	return $db;
+}
+
+function dbg(mixed $msg): void {
+	\NaN\Debug::log($msg);
 }
 
 function env(string $key, mixed $fallback = null): ?string {
@@ -43,8 +48,15 @@ function env(string $key, mixed $fallback = null): ?string {
 	return Env::get($key, $fallback);
 }
 
-function dbg(mixed $msg): void {
-	NaN\Debug::log($msg);
+function sql(): \NaN\Database\Query\Builders\Interfaces\QueryBuilderInterface {
+	static $query = null;
+
+	if (!$query) {
+		$driver = new SqlDriver();
+		$query = $driver->createQueryBuilder();
+	}
+
+	return $query;
 }
 
 function tpl(): TemplateEngine {
