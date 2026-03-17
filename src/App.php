@@ -28,8 +28,10 @@ class App implements \ArrayAccess, PsrContainerInterface, PsrRequestHandlerInter
 		protected PsrContainerInterface $services = new Container(),
 		protected PsrRequestHandlerInterface $middleware = new Middleware(),
 	) {
-		if ($this->services instanceof ContainerInterface
-		 && $this->middleware instanceof PsrContainerInterface) {
+		if (
+			$this->services instanceof ContainerInterface &&
+			$this->middleware instanceof PsrContainerInterface
+		) {
 			$this->services->addDelegate($this->middleware);
 		}
 	}
