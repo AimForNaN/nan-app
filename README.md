@@ -6,7 +6,7 @@ A PHP micro-framework focused on simplicity and performance.
 
 #### Requirements
 
- - PHP 8.1 or greater.
+ - PHP 8.4 or greater.
 
 #### Composer
 
@@ -17,7 +17,7 @@ Edit your composer configuration to include our git repository.
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/AimForNaN/nan.git"
+            "url": "https://github.com/AimForNaN/nan-php.git"
         }
     ]
 }
@@ -26,5 +26,5 @@ Edit your composer configuration to include our git repository.
 After which, you can install the NaN micro-framework with composer.
 
 ```shell
-composer require aimfornan/nan
+composer require aimfornan/nan:dev-master
 ```
