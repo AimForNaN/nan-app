@@ -156,7 +156,7 @@ use NaN\App\Controller\Interfaces\{
 };
 use NaN\App\Controller\Traits\ControllerTrait;
 
-class CustomController implements ControllerInterface, GetControllerInterface, PostControllerInterface {
+class CustomController implements GetControllerInterface, PostControllerInterface {
 	use ControllerTrait;
 
 	public function get(): ResponseInterface {
@@ -189,7 +189,7 @@ Dependency injection will still function the same, with the exception that you m
 By making the parameters optional, you satisfy the interface inheritance requirements.
 
 ```php
-class UserController implements ControllerInterface, GetControllerInterface {
+class UserController implements GetControllerInterface {
 	use ControllerTrait;
 
 	public function get($id = null): ResponseInterface {
