@@ -56,7 +56,7 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 
 		if ($app) {
 			$handler = \Closure::bind($handler, $container);
-			$container->addDelegate($app);
+			$container->addDelegates($app);
 		}
 
 		return $handler();

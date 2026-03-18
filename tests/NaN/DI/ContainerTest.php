@@ -37,7 +37,7 @@ describe('Dependency Injection: Container', function () {
 			TemplateEngine::class => TemplateEngine::class,
 		]);
 
-		$container->addDelegate($delegate);
+		$container->addDelegates($delegate);
 
 		expect($container)
 			->toHaveCount(1)

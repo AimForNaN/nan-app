@@ -28,7 +28,7 @@ class AppBench {
 			return new Response();
 		};
 
-		$app = new App(middleware: new Middleware([
+		$app = new App(_middleware: new Middleware([
 			$router,
 		]));
 		$app->run();
