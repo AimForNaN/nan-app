@@ -2,13 +2,13 @@
 
 namespace NaN\App\Middleware\Router;
 
-use NaN\App;
 use NaN\App\Controller\Interfaces\ControllerInterface;
 use NaN\DI\{
 	Arguments,
 	Container,
 };
 use NaN\Http\Response;
+use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
 	ServerRequestInterface as PsrServerRequestInterface,
@@ -41,7 +41,7 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 		}
 	}
 
-	public function handle(PsrServerRequestInterface $request, ?App $app = null): PsrResponseInterface {
+	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
 		$pattern = new RoutePattern($this->path);
 		$pattern->compile();
 		$pattern->matchesRequest($request);
@@ -49,14 +49,17 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 		$values = $pattern->getMatches();
 		$handler = $this->toCallable($request, $values);
 
-		$container = new Container([
-			Route::class => $this,
-			PsrServerRequestInterface::class => $request,
-		]);
 
-		if ($app) {
+		if ($services = $request->getAttribute(PsrContainerInterface::class)) {
+			$container = new Container(
+				[
+					Route::class => $this,
+					PsrServerRequestInterface::class => $request,
+				], [
+					$services,
+				],
+			);
 			$handler = \Closure::bind($handler, $container);
-			$container->addDelegates($app);
 		}
 
 		return $handler();

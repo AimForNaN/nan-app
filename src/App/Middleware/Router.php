@@ -2,7 +2,6 @@
 
 namespace NaN\App\Middleware;
 
-use NaN\App;
 use NaN\App\Middleware\Router\Route;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
@@ -127,15 +126,14 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 	public function process(
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
-		?App $app = null,
 	): PsrResponseInterface {
 		$route = $this->match($request->getUri()->getPath());
 
 		if (!$route) {
-			return $handler->handle($request, $app);
+			return $handler->handle($request);
 		}
 
-		return $route->handle($request, $app);
+		return $route->handle($request);
 	}
 
 	public function setName(string $name, Route $route): static {

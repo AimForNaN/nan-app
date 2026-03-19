@@ -32,12 +32,10 @@ describe('Dependency Injection: Container', function () {
 	});
 
 	test('Delegate', function () {
-		$container = new Container();
 		$delegate = new Container([
 			TemplateEngine::class => TemplateEngine::class,
 		]);
-
-		$container->addDelegates($delegate);
+		$container = new Container(delegates: [$delegate]);
 
 		expect($container)
 			->toHaveCount(1)

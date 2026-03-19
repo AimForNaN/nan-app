@@ -11,6 +11,7 @@ use NaN\Http\{
 	Request,
 	Response,
 };
+use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
 };
@@ -19,12 +20,17 @@ describe('App', function () {
 	test('Non-existent route', function () {
 		$routes = new Router();
 
-		$app = new App();
-		$app->use($routes);
+		$app = new App()->withMiddleware($routes);
+		$request = new Request('GET', '/bad/route')
+			->withAttribute(PsrContainerInterface::class, $app->services)
+		;
 
-		$rsp = $app->handle(new Request('GET', '/bad/route'));
-		expect($rsp)->toBeInstanceOf(PsrResponseInterface::class);
-		expect($rsp->getStatusCode())->toBe(404);
+		$rsp = $app->handle($request);
+		expect($rsp)
+			->toBeInstanceOf(PsrResponseInterface::class)
+			->and($rsp->getStatusCode())
+				->toBe(404)
+		;
 	});
 
 	test('Route dependency injection (closure)', function () {
@@ -33,10 +39,12 @@ describe('App', function () {
 			return new Response(body: 'good');
 		};
 
-		$app = new App();
-		$app->use($routes);
+		$app = new App()->withMiddleware($routes);
+		$request = new Request('GET', '/')
+			->withAttribute(PsrContainerInterface::class, $app->services)
+		;
 
-		$rsp = $app->handle(new Request('GET', '/'));
+		$rsp = $app->handle($request);
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
 			->and($rsp->getStatusCode())
@@ -53,10 +61,12 @@ describe('App', function () {
 			return new Response(body: 'good');
 		};
 
-		$app = new App();
-		$app->use($routes);
+		$app = new App()->withMiddleware($routes);
+		$request = new Request('GET', '/1')
+			->withAttribute(PsrContainerInterface::class, $app->services)
+		;
 
-		$rsp = $app->handle(new Request('GET', '/1'));
+		$rsp = $app->handle($request);
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
 			->and($rsp->getStatusCode())
@@ -83,10 +93,12 @@ describe('App', function () {
 		$routes = new Router();
 		$routes['/{id}'] = TestController::class;
 
-		$app = new App();
-		$app->use($routes);
+		$app = new App()->withMiddleware($routes);
+		$request = new Request('GET', '/1')
+			->withAttribute(PsrContainerInterface::class, $app->services)
+		;
 
-		$rsp = $app->handle(new Request('GET', '/1'));
+		$rsp = $app->handle($request);
 		expect($rsp->getStatusCode())
 			->toBe(200)
 			->and((string)$rsp->getBody())
