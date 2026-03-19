@@ -1,7 +1,6 @@
 <?php
 
 use NaN\App;
-use NaN\App\Middleware;
 use NaN\App\Middleware\Router;
 use NaN\Http\Response;
 
@@ -10,7 +9,7 @@ class AppBench {
 	 * @Iterations(10)
 	 * @Revs(10)
 	 */
-	public function benchNanAppStartup() {
+	public function benchNanAppStartup(): void {
 		$app = new App();
 	}
 
@@ -19,7 +18,7 @@ class AppBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchNanAppRun() {
+	public function benchNanAppRun(): void {
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_SERVER['REQUEST_URI'] = '/';
 
@@ -28,9 +27,7 @@ class AppBench {
 			return new Response();
 		};
 
-		$app = new App(_middleware: new Middleware([
-			$router,
-		]));
+		$app = new App()->withMiddleware($router);
 		$app->run();
 	}
 }
