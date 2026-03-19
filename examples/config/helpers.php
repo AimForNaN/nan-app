@@ -2,7 +2,8 @@
 
 use NaN\App;
 use NaN\App\TemplateEngine;
-use NaN\Database\Drivers\SqlDriver;
+use NaN\Database\Query\Builders\Interfaces\QueryBuilderInterface;
+use NaN\Database\Sql\Drivers\SqlDriver;
 use NaN\Env;
 
 function app(): App {
@@ -10,10 +11,8 @@ function app(): App {
 
 	if (!$app) {
 		$services = include(__DIR__ . '/services.php');
-		$router = include(__DIR__ . '/routes.php');
-		$app = new App($services);
-
-		$app->use($router);
+		$middleware = include(__DIR__ . '/middleware.php');
+		$app = new App($services, $middleware);
 	}
 
 	return $app;
@@ -48,12 +47,19 @@ function env(string $key, mixed $fallback = null): ?string {
 	return Env::get($key, $fallback);
 }
 
-function sql(): \NaN\Database\Query\Builders\Interfaces\QueryBuilderInterface {
+/**
+ * @throws Exception
+ */
+function sql(string $sql = '', array $binding = []): QueryBuilderInterface|\PDOStatement|false {
 	static $query = null;
 
 	if (!$query) {
 		$driver = new SqlDriver();
 		$query = $driver->createQueryBuilder();
+	}
+
+	if (!empty($sql)) {
+		return db()->raw($sql, $binding);
 	}
 
 	return $query;
