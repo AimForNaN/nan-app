@@ -2,11 +2,14 @@
 
 namespace NaN\App\Controller\Traits;
 
-use NaN\Http\Response;
+use GuzzleHttp\Psr7\Utils;
 use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 
+/**
+ * @method PsrResponseInterface get()
+ */
 trait HeadControllerTrait {
-	public function head(): PsrResponseInterface {
-		return new Response(501);
+	public function head(...$args): PsrResponseInterface {
+		return $this->get(...$args)->withBody(Utils::streamFor(''));
 	}
 }
