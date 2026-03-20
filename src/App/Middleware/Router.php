@@ -3,6 +3,8 @@
 namespace NaN\App\Middleware;
 
 use NaN\App\Middleware\Router\Route;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
 	ServerRequestInterface as PsrServerRequestInterface,
@@ -13,7 +15,7 @@ use Psr\Http\Server\{
 };
 
 class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface {
-	protected array $named_routes = [];
+	protected array $_named_routes = [];
 
 	public function __construct(
 		protected(set) Route $root = new Route('/'),
@@ -53,7 +55,7 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 		}
 
 		if ($name) {
-			$this->named_routes[$name] = $current;
+			$this->_named_routes[$name] = $current;
 		}
 
 		return $current;
@@ -76,7 +78,7 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 		}
 
 		if ($name) {
-			$this->named_routes[$name] = $current;
+			$this->_named_routes[$name] = $current;
 		}
 
 		return $current;
@@ -100,7 +102,7 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 	}
 
 	public function matchName(string $name): ?Route {
-		return $this->named_routes[$name] ?? null;
+		return $this->_named_routes[$name] ?? null;
 	}
 
 	public function offsetExists(mixed $offset): bool {
@@ -123,6 +125,11 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 		return \array_filter(\explode('/', ltrim($path, '/')));
 	}
 
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws NotFoundExceptionInterface
+	 * @throws \ReflectionException
+	 */
 	public function process(
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
@@ -137,7 +144,7 @@ class Router implements \ArrayAccess, \IteratorAggregate, PsrMiddlewareInterface
 	}
 
 	public function setName(string $name, Route $route): static {
-		$this->named_routes[$name] = $route;
+		$this->_named_routes[$name] = $route;
 
 		return $this;
 	}

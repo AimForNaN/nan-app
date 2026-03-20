@@ -50,9 +50,7 @@ class App implements \Iterator, PsrRequestHandlerInterface {
 	}
 
 	public function withMiddleware(PsrMiddlewareInterface ...$middleware): static {
-		$new = clone $this;
-		$new->_middleware = $middleware;
-		return $new;
+		return new self($this->services, $middleware);
 	}
 
 	public function withServices(PsrContainerInterface $container): static {

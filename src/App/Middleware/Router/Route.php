@@ -8,7 +8,9 @@ use NaN\DI\{
 	Container,
 };
 use NaN\Http\Response;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
 	ServerRequestInterface as PsrServerRequestInterface,
@@ -51,6 +53,8 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 	}
 
 	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws NotFoundExceptionInterface
 	 * @throws \ReflectionException
 	 */
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
@@ -141,14 +145,14 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 			$allowed_methods = $handler->getAllowedMethods();
 			$method = $request->getMethod();
 
-			if ($allowed_methods[$method] ?? false) {
+			if (isset($allowed_methods[$method])) {
 				$method = \strtolower($method);
 				return $handler->$method(...);
 			}
 
-			return function (): PsrResponseInterface {
-				return new Response(405);
-			};
+			return fn(): PsrResponseInterface => new Response(405, [
+				'Allow' => \implode(', ', $allowed_methods),
+			]);
 		}
 
 		return \Closure::bind($handler, $this);
