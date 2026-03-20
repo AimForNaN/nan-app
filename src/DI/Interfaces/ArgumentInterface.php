@@ -5,15 +5,23 @@ namespace NaN\DI\Interfaces;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 
 interface ArgumentInterface {
-	public function resolve(?PsrContainerInterface $container = null): mixed;
+	public function getDefaultValue(): mixed;
 
-	public function setName(string $name): ArgumentInterface;
+	public function getName(): string;
 
-	public function setNullable(bool $nullable = true): ArgumentInterface;
+	public function getTypes(): array;
 
-	public function setOptional(bool $optional = true): ArgumentInterface;
+	public function hasDefaultValue(): bool;
 
-	public function setType(string $type): ArgumentInterface;
+	public function hasType(?string $type = null): bool;
 
-	public function setVariadic(bool $variadic = true): ArgumentInterface;
+	public function isNullable(): bool;
+
+	public function isOptional(): bool;
+
+	public function isPrimitive(): bool;
+
+	public function isVariadic(): bool;
+
+	public function resolvePrimitive(mixed $value): mixed;
 }

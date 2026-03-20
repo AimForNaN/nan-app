@@ -41,8 +41,6 @@ class App implements \Iterator, PsrRequestHandlerInterface {
 	 *  (e.g. register_shutdown_function, set_error_handler, set_exception_handler, etc).
 	 */
 	public function run(): void {
-		$this->rewind();
-
 		$req = Request::fromGlobals()
 			->withAttribute(PsrContainerInterface::class, $this->services)
 		;

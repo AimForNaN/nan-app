@@ -3,101 +3,112 @@
 namespace NaN\DI;
 
 use NaN\DI\Interfaces\ArgumentInterface;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
-class Arguments extends \NaN\Collections\TypedCollection {
-	protected mixed $type = ArgumentInterface::class;
-
-	static protected function analyzeCallable(callable $callable): array {
-		$rf = new \ReflectionFunction($callable);
-		return \array_map([static::class, 'analyzeParameter'], $rf->getParameters());
+class Arguments implements \Countable, \IteratorAggregate {
+	public function __construct(
+		protected readonly array $_args = [],
+	) {
 	}
 
-	static protected function analyzeClass(string $class): array {
-		$rf = new \ReflectionClass($class);
-		$rf = $rf->getConstructor();
-		return \array_map([static::class, 'analyzeParameter'], $rf->getParameters());
-	}
-
-	static protected function analyzeClassMethod(string $class, string $method): array {
-		$rf = new \ReflectionClass($class);
-		$rf = $rf->getMethod($method);
-		return \array_map([static::class, 'analyzeParameter'], $rf->getParameters());
-	}
-
-	static protected function analyzeParameter(\ReflectionParameter $param): array {
-		$name = $param->getName();
-		$type = $param->hasType() ? $param->getType() : '';
-		$optional = $param->isOptional();
-		$default_value = $optional ? $param->getDefaultValue() : null;
-		$nullable = $param->allowsNull();
-		$variadic = $param->isVariadic();
-
-		if ($type instanceof \ReflectionUnionType) {
-			$type = \array_map(fn(\ReflectionNamedType $item) => $item->getName(), $type->getTypes());
-		} else if ($type instanceof \ReflectionNamedType) {
-			$type = $type->getName();
-		} else {
-			$type = '';
-		}
-
-		return \compact('default_value', 'name', 'nullable', 'optional', 'type', 'variadic');
-	}
-
-	static protected function fromAnalysis(array $arguments, array $values = []): static {
-		return new static(\array_map(function ($argument, $idx) use ($values): Argument {
-			\extract($argument);
-
-			// If not named parameter, then indexed!
-			if (isset($values[$name])) {
-				$default_value = $values[$name];
-			} else if (isset($values[$idx])) {
-				$default_value = $values[$idx];
-			}
-
-			return (new Argument($default_value))
-				->setName($name)
-				->setNullable($nullable)
-				->setOptional($optional)
-				->setType($type)
-				->setVariadic($variadic)
-			;
-		}, $arguments, \array_keys($arguments)));
+	public function count(): int {
+		return \count($this->_args);
 	}
 
 	/**
-	 * @param callable $callable Callable to analyze.
-	 * @param array [$values] Argument values to match against.
+	 * @throws \ReflectionException
 	 */
-	static public function fromCallable(callable $callable, array $values = []): static {
-		$arguments = static::analyzeCallable($callable);
-		return static::fromAnalysis($arguments, $values);
+	static public function fromCallable(callable $callable): self {
+		$arguments = static::_analyzeCallable($callable);
+		return new self($arguments);
 	}
 
-	static public function fromClass(string $class, array $values = []): static {
-		$arguments = static::analyzeClass($class);
-		return static::fromAnalysis($arguments, $values);
+	/**
+	 * @throws \ReflectionException
+	 */
+	static public function fromClassConstructor(string $class): self {
+		$arguments = static::_analyzeClassConstructor($class);
+		return new self($arguments);
 	}
 
-	static public function fromValues(array $values): static {
-		return new static(\array_map(function ($value) {
-			if ($value instanceof ArgumentInterface) {
-				return $value;
-			}
+	/**
+	 * @throws \ReflectionException
+	 */
+	static public function fromClassMethod(string $class, string $method): self {
+		$arguments = static::_analyzeClassMethod($class, $method);
+		return new self($arguments);
+	}
 
-			$argument = new Argument($value);
+	/**
+	 * @throws \ReflectionException
+	 */
+	static public function fromParameter(\ReflectionParameter $param): ArgumentInterface {
+		return Argument::fromParameter($param);
+	}
 
-			if (\is_string($value)) {
-				if (\class_exists($value)) {
-					$argument->setType($value);
+	public function getIterator(): \Traversable {
+		yield from $this->_args;
+	}
+
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws NotFoundExceptionInterface
+	 */
+	public function resolve(array $values, ?PsrContainerInterface $container = null): array {
+		$resolved = [];
+
+		/** @var ArgumentInterface $argument */
+		foreach ($this as $argument) {
+			$name = $argument->getName();
+
+			if (isset($values[$name])) {
+				if ($argument->isPrimitive()) {
+					$resolved[] = $argument->resolvePrimitive($values[$name]);
+				} else {
+					$resolved[] = $values[$name];
 				}
-			}
+			} else if ($container) {
+				$type = \array_find_key($argument->getTypes(), fn($x) => !$x);
 
-			return $argument;
-		}, $values));
+				if ($type) {
+					$resolved[] = $container->get($type);
+				}
+			} else if ($argument->hasDefaultValue()) {
+				$resolved[] = $argument->getDefaultValue();
+			}
+		}
+
+		return $resolved;
 	}
 
-	public function resolve(?PsrContainerInterface $container = null): array {
-		return $this->map(fn(ArgumentInterface $argument) => $argument->resolve($container));
+	/**
+	 * @throws \ReflectionException
+	 */
+	static protected function _analyzeCallable(callable $callable): array {
+		$rf = new \ReflectionFunction($callable);
+
+		return \array_map(static::fromParameter(...), $rf->getParameters());
+	}
+
+	/**
+	 * @throws \ReflectionException
+	 */
+	static protected function _analyzeClassConstructor(string $class): array {
+		$rf = new \ReflectionClass($class);
+		$rf = $rf->getConstructor();
+
+		return \array_map(static::fromParameter(...), $rf->getParameters());
+	}
+
+	/**
+	 * @throws \ReflectionException
+	 */
+	static protected function _analyzeClassMethod(string $class, string $method): array {
+		$rf = new \ReflectionClass($class);
+		$rf = $rf->getMethod($method);
+
+		return \array_map(static::fromParameter(...), $rf->getParameters());
 	}
 }

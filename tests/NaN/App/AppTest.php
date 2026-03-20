@@ -14,6 +14,7 @@ use NaN\Http\{
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
+	ServerRequestInterface as PsrServerRequestInterface,
 };
 
 describe('App', function () {
@@ -35,7 +36,13 @@ describe('App', function () {
 
 	test('Route dependency injection (closure)', function () {
 		$routes = new Router();
-		$routes['/'] = function () {
+		$routes['/'] = function (PsrServerRequestInterface $request) {
+			expect($request)
+				->toBeInstanceOf(PsrServerRequestInterface::class)
+				->and($request->getAttribute(PsrContainerInterface::class))
+					->toBeInstanceOf(PsrContainerInterface::class)
+			;
+
 			return new Response(body: 'good');
 		};
 
@@ -65,8 +72,8 @@ describe('App', function () {
 		$request = new Request('GET', '/1')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
-
 		$rsp = $app->handle($request);
+
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
 			->and($rsp->getStatusCode())
@@ -80,9 +87,13 @@ describe('App', function () {
 		class TestController implements ControllerInterface, GetControllerInterface {
 			use ControllerTrait;
 
-			public function get(?int $id = null): PsrResponseInterface {
+			public function get(?PsrServerRequestInterface $request = null, ?int $id = null): PsrResponseInterface {
 				expect($id)
-					->toBe(1)
+					->toBe(123)
+					->and($request)
+						->toBeInstanceOf(PsrServerRequestInterface::class)
+					->and($request->getAttribute(PsrContainerInterface::class))
+						->toBeInstanceOf(PsrContainerInterface::class)
 					->and($this)
 						->toBeInstanceOf(TestController::class)
 				;
@@ -94,7 +105,7 @@ describe('App', function () {
 		$routes['/{id}'] = TestController::class;
 
 		$app = new App()->withMiddleware($routes);
-		$request = new Request('GET', '/1')
+		$request = new Request('GET', '/123')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
