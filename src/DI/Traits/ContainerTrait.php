@@ -7,6 +7,10 @@ use NaN\DI\Exceptions\NotFoundException;
 trait ContainerTrait {
 	protected array $_services = [];
 
+	public function count(): int {
+		return \count($this->_services);
+	}
+
 	public function get(string $id): mixed {
 		$entry = $this->_services[$id] ?? null;
 
