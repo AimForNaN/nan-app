@@ -2,11 +2,18 @@
 
 namespace NaN\DI;
 
-use NaN\DI\Traits\ContainerTrait;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 
 class Container implements \Countable, \IteratorAggregate, PsrContainerInterface {
-	use ContainerTrait;
+	use Traits\ContainerDelegatesTrait;
+
+	public function __construct(
+		array $services = [],
+		iterable $delegates = [],
+	) {
+		$this->_services = $services;
+		$this->addDelegates(...$delegates);
+	}
 
 	public function count(): int {
 		$count = \count($this->_services);
