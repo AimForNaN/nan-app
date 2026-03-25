@@ -2,15 +2,20 @@
 
 namespace NaN\Collections;
 
-use NaN\Collections\Interfaces\CollectionInterface;
+class Collection implements Interfaces\CollectionInterface {
+	protected array $_data = [];
 
-class Collection implements CollectionInterface {
 	/**
-	 * @param iterable $data 
+	 * @param mixed ...$data
 	 */
 	public function __construct(
-		protected array $data = [],
+		mixed ...$data,
 	) {
+		$this->_data = $data;
+	}
+
+	public function any(callable $fn): bool {
+		return \iter\any($fn, $this->getIterator());
 	}
 
 	public function count(): int {
@@ -18,87 +23,33 @@ class Collection implements CollectionInterface {
 	}
 
 	public function every(callable $fn): bool {
-		foreach ($this->getIterator() as $key => $val) {
-			if (!$fn($val, $key)) {
-				return false;
-			}
-		}
-
-		return true;
+		return \iter\all($fn, $this->getIterator());
 	}
 
-	public function filter(callable $filter): \Traversable {
-		return new \CallbackFilterIterator($this->getIterator(), $filter);
+	public function filter(callable $fn): \Traversable {
+		return \iter\filter($fn, $this->getIterator());
 	}
 
 	public function find(callable $fn): mixed {
-		foreach ($this->getIterator() as $key => $val) {
-			if ($fn($val, $key)) {
-				return $val;
-			}
-		}
-		return null;
+		return \iter\search($fn, $this->getIterator());
 	}
 
 	public function getIterator(): \Traversable {
-		return new \ArrayIterator($this->data);
+		yield from $this->_data;
 	}
 
-	public function implode(string $delimiter) {
-		return \implode($delimiter, $this->data);
+	public function implode(string $delimiter): string {
+		return \implode($delimiter, $this->_data);
 	}
 
-	public function map(callable $fn): array {
-		$data = [];
-		$it = $this->getIterator();
-		
-		foreach ($it as $key => $val) {
-			$data[$key] = $fn($val, $key, $it);
-		}
-
-		return $data;
+	public function map(callable $fn): \Traversable {
+		return \iter\map($fn, $this->getIterator());
 	}
 
-	public function offsetExists(mixed $offset): bool {
-		return isset($this->data[$offset]);
+	public function reduce(callable $fn, mixed $initial_value = null): mixed {
+		return \iter\reduce($fn, $this->getIterator(), $initial_value);
 	}
 
-	public function offsetGet(mixed $offset): mixed {
-		return $this->data[$offset] ?? null;
-	}
-
-	public function offsetSet(mixed $offset, mixed $value): void {
-		if (!\is_null($offset)) {
-			$this->data[$offset] = $value;
-		} else {
-			$this->data[] = $value;
-		}
-	}
-
-	public function offsetUnset(mixed $offset): void {
-		unset($this->data[$offset]);
-	}
-
-	public function reduce(callable $fn, mixed $ret = null): mixed {
-		$it = $this->getIterator();
-
-		foreach ($it as $key => $val) {
-			$ret = $fn($ret, $val, $key, $it);
-		}
-
-		return $ret;
-	}
-
-	public function some(callable $fn): bool {
-		foreach ($this->getIterator() as $key => $val) {
-			if ($fn($val, $key)) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-	
 	public function toArray(): array {
 		return \iterator_to_array($this->getIterator());
 	}

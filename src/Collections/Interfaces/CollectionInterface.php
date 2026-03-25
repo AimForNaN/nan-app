@@ -2,20 +2,20 @@
 
 namespace NaN\Collections\Interfaces;
 
-interface CollectionInterface extends \ArrayAccess, \Countable, \IteratorAggregate {
+interface CollectionInterface extends \Countable, \IteratorAggregate {
+	public function any(callable $fn): bool;
+
 	public function every(callable $fn): bool;
 
 	public function filter(callable $filter): \Traversable;
 
 	public function find(callable $fn): mixed;
 
-	public function implode(string $delimiter);
+	public function implode(string $delimiter): string;
 
-	public function map(callable $fn): array;
+	public function map(callable $fn): \Traversable;
 
-	public function reduce(callable $fn, mixed $ret = null): mixed;
-
-	public function some(callable $fn): bool;
+	public function reduce(callable $fn, mixed $initial_value = null): mixed;
 
 	public function toArray(): array;
 }
