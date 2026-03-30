@@ -1,7 +1,7 @@
 <?php
 
 use NaN\App;
-use NaN\App\Middleware\Router;
+use NaN\App\Middleware\{Router, Router\Route, Router\RoutesCollection};
 use NaN\Http\Response;
 
 class AppBench {
@@ -22,10 +22,11 @@ class AppBench {
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_SERVER['REQUEST_URI'] = '/';
 
-		$router = new Router();
-		$router['/'] = function () {
-			return new Response();
-		};
+		$router = new Router(new RoutesCollection(
+			new Route('/', function () {
+				return new Response();
+			}),
+		));
 
 		$app = new App()->withMiddleware($router);
 		$app->run();

@@ -1,7 +1,6 @@
 <?php
 
-use NaN\App\Middleware\Router;
-use NaN\App\Middleware\Router\Route;
+use NaN\App\Middleware\Router\{Route, RoutesCollection};
 use NaN\Http\{
 	Request,
 	Response,
@@ -30,39 +29,16 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchParamNanRouterInsertManual(): Router {
+	public function benchParamNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield $x => new Route('/param/' . $x, null, [
-					'{id}' => new Route('/param/' . $x . '/{id}', function ($id) {
-						return new Response(200);
-					}),
-				]);
+				yield new Route('/param/' . $x . '/{id}', function ($id) {
+					return new Response(200);
+				});
 			}
 		};
-		$root = new Route('/', null, [
-			'param' => new Route('/param', null, \iterator_to_array($generator())),
-		]);
-		$router = new Router($root);
 
-		return $router;
-	}
-
-	/**
-	 * @Iterations(20)
-	 * @Revs(10)
-	 * @Warmup(1)
-	 */
-	public function benchParamNanRouterInsertIndex(): Router {
-		$router = new Router();
-
-		for ($x = 0; $x < 1000; $x++) {
-			$router['/param/' . $x . '/{id}'] = function ($id) {
-				return new Response(200);
-			};
-		}
-
-		return $router;
+		return new RoutesCollection(...$generator());
 	}
 
 	/**
@@ -88,22 +64,16 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchStaticNanRouterInsertManual(): Router {
+	public function benchStaticNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield $x => new Route('/param/' . $x, null, [
-					'1' => new Route('/param/' . $x . '/1', function ($id) {
-						return new Response(200);
-					}),
-				]);
+				yield new Route('/param/' . $x . '/1', function ($id) {
+					return new Response(200);
+				});
 			}
 		};
-		$root = new Route('/', null, [
-			'param' => new Route('/param', null, \iterator_to_array($generator())),
-		]);
-		$router = new Router($root);
 
-		return $router;
+		return new RoutesCollection(...$generator());
 	}
 
 	/**
@@ -111,29 +81,10 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchStaticNanRouterInsertIndex(): Router {
-		$router = new Router();
-
-		for ($x = 0; $x < 1000; $x++) {
-			$router['/param/' . $x . '/1'] = function ($id) {
-				return new Response(200);
-			};
-		}
-
-		return $router;
-	}
-
-	/**
-	 * @Iterations(20)
-	 * @Revs(10)
-	 * @Warmup(1)
-	 */
-	public function benchParamNanRouterLookup() {
-		$router = $this->benchParamNanRouterInsertManual();
+	public function benchParamNanRouterLookup(): void {
+		$routes = $this->benchParamNanRouterInsertManual();
 		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
-		$route = $router[$request->getUri()->getPath()];
-
-		$route->matchesRequest($request);
+		$route = $routes->match($request->getUri()->getPath());
 	}
 
 	/**
@@ -141,7 +92,7 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchParamNanRoutesArrayLookup() {
+	public function benchParamNanRoutesArrayLookup(): void {
 		$routes = $this->benchParamNanRoutesArrayInsert();
 		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 
@@ -157,11 +108,10 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchStaticNanRouterLookup() {
-		$router = $this->benchStaticNanRouterInsertManual();
+	public function benchStaticNanRouterLookup(): void {
+		$routes = $this->benchStaticNanRouterInsertManual();
 		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
-		$route = $router[$request->getUri()->getPath()];
-		$route->matchesRequest($request);
+		$route = $routes->match($request->getUri()->getPath());
 	}
 
 	/**
@@ -169,11 +119,14 @@ class RouterBench {
 	 * @Revs(10)
 	 * @Warmup(1)
 	 */
-	public function benchStaticNanRoutesArrayLookup() {
+	public function benchStaticNanRoutesArrayLookup(): void {
 		$routes = $this->benchStaticNanRoutesArrayInsert();
 		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
-		$route = $routes[$request->getUri()->getPath()];
 
-		$route->matchesRequest($request);
+		foreach ($routes as $route) {
+			if ($route->matchesRequest($request)) {
+				return;
+			}
+		}
 	}
 }
