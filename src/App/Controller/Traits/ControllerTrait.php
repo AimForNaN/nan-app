@@ -2,21 +2,29 @@
 
 namespace NaN\App\Controller\Traits;
 
+use GuzzleHttp\Psr7\Utils;
 use NaN\App\Controller\Interfaces\{
 	ConnectControllerInterface,
 	DeleteControllerInterface,
-	GetControllerInterface,
-	HeadControllerInterface,
 	OptionsControllerInterface,
 	PatchControllerInterface,
 	PostControllerInterface,
 	PutControllerInterface,
 	TraceControllerInterface,
 };
+use NaN\Http\Response;
+use Psr\Http\Message\ResponseInterface as PsrResponseInterface;
 
 trait ControllerTrait {
+	public function get(): PsrResponseInterface {
+		return new Response(501);
+	}
+
 	public function getAllowedMethods(): array {
-		$allowed_methods = [];
+		$allowed_methods = [
+			'GET' => 'GET',
+			'HEAD' => 'HEAD',
+		];
 
 		if ($this instanceof ConnectControllerInterface) {
 			$allowed_methods['CONNECT'] = 'CONNECT';
@@ -24,14 +32,6 @@ trait ControllerTrait {
 
 		if ($this instanceof DeleteControllerInterface) {
 			$allowed_methods['DELETE'] = 'DELETE';
-		}
-
-		if ($this instanceof GetControllerInterface) {
-			$allowed_methods['GET'] = 'GET';
-		}
-
-		if ($this instanceof HeadControllerInterface) {
-			$allowed_methods['HEAD'] = 'HEAD';
 		}
 
 		if ($this instanceof OptionsControllerInterface) {
@@ -55,5 +55,9 @@ trait ControllerTrait {
 		}
 
 		return $allowed_methods;
+	}
+
+	public function head(...$args): PsrResponseInterface {
+		return $this->get(...$args)->withBody(Utils::streamFor(''));
 	}
 }
