@@ -40,7 +40,7 @@ class Response extends \GuzzleHttp\Psr7\Response {
 		]);
 	}
 
-	static public function send(PsrResponseInterface $rsp) {
+	static public function send(PsrResponseInterface $rsp): void {
 		static::sendHeaders($rsp);
 
 		if ($rsp->getStatusCode() !== 204) {
@@ -48,13 +48,13 @@ class Response extends \GuzzleHttp\Psr7\Response {
 		}
 	}
 
-	static public function sendBody(PsrResponseInterface $rsp) {
+	static public function sendBody(PsrResponseInterface $rsp): void {
 		$out = Utils::streamFor(fopen('php://output', 'w'));
 		$content = (string)$rsp->getBody();
 		$out->write($content);
 	}
 
-	static public function sendHeaders(PsrResponseInterface $rsp) {
+	static public function sendHeaders(PsrResponseInterface $rsp): void {
 		[$protocol] = static::parseServerProtocol();
 		$version = $rsp->getProtocolVersion();
 		$status = $rsp->getStatusCode();
