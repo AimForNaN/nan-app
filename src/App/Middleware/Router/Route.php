@@ -17,38 +17,14 @@ use Psr\Http\Message\{
 };
 use Psr\Http\Server\RequestHandlerInterface as PsrRequestHandlerInterface;
 
-class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterface {
-	protected readonly \Closure|string|null $_handler;
-
+readonly class Route implements PsrRequestHandlerInterface {
 	public function __construct(
-		public readonly ?string $path = null,
-		callable|string|null $handler = null,
-		protected array $_children = [],
+		public string $path,
+		public \Closure|string|null $handler = null,
+		public ?string $name = null,
 	) {
-		if (!$handler) {
-			$handler = function (): PsrResponseInterface {
-				return new Response(404);
-			};
-		}
-
-		$this->_handler = $handler;
-	}
-
-	public function contains(Route $route): bool {
-		foreach ($this as $child) {
-			if ($child === $route) {
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	public function getIterator(): \Traversable {
-		yield $this;
-
-		foreach ($this->_children as $route) {
-			yield from $route->getIterator();
+		if (empty($this->path)) {
+			throw new \InvalidArgumentException('Path cannot be empty!');
 		}
 	}
 
@@ -80,38 +56,15 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 		return $handler(...$values);
 	}
 
-	public function insert(string $part, Route $route): self {
-		$this->_children[$part] = $route;
-		return $this;
-	}
-
-	public function isValid(): bool {
-		return \is_callable($this->_handler) || \is_a($this->_handler, ControllerInterface::class);
-	}
-
-	public function match(string $part): ?Route {
-		if (isset($this->_children[$part])) {
-			return $this->_children[$part];
-		}
-
-		foreach ($this->_children as $path => $child) {
-			// Skip what's already been tested for!
-			if ($path === $part) {
-				continue;
-			}
-
-			$pattern = new RoutePattern($path);
-			$pattern->compile();
-
-			if ($pattern->matches($part)) {
-				return $child;
-			}
-		}
-
-		return null;
+	public function isNull(): bool {
+		return \is_null($this->handler);
 	}
 
 	public function matches(string $path): bool {
+		if ($path === $this->path) {
+			return true;
+		}
+
 		$pattern = new RoutePattern($this->path);
 		$pattern->compile();
 		return $pattern->matches($path);
@@ -121,24 +74,14 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 		return $this->matches($request->getUri()->getPath());
 	}
 
-	public function offsetExists(mixed $offset): bool {
-		return isset($this->_children[$offset]);
-	}
-
-	public function offsetGet(mixed $offset): mixed {
-		return $this->_children[$offset] ?? null;
-	}
-
-	public function offsetSet(mixed $offset, mixed $value): void {
-		$this->insert($offset, $value);
-	}
-
-	public function offsetUnset(mixed $offset): void {
-		unset($this->_children[$offset]);
-	}
-
 	public function toCallable(PsrServerRequestInterface $request): callable {
-		$handler = $this->_handler;
+		$handler = $this->handler;
+
+		if ($this->isNull()) {
+			return function (): PsrResponseInterface {
+				return new Response(501);
+			};
+		}
 
 		if (\is_subclass_of($handler, ControllerInterface::class))  {
 			$handler = new $handler();
@@ -172,11 +115,10 @@ class Route implements \ArrayAccess, \IteratorAggregate, PsrRequestHandlerInterf
 	}
 
 	public function withHandler(mixed $handler): static {
-		return new self($this->path, $handler, $this->_children);
+		return new self($this->path, $handler);
 	}
 
 	public function withPath(string $path): static {
-		$route = new self($path, $this->_handler, $this->_children);
-		return $route;
+		return new self($path, $this->handler);
 	}
 }
