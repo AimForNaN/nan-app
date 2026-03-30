@@ -1,12 +1,13 @@
 <?php
 
 use NaN\App;
-use NaN\App\Controller\Interfaces\{
-	ControllerInterface,
-	GetControllerInterface,
-};
+use NaN\App\Controller\Interfaces\ControllerInterface;
 use NaN\App\Controller\Traits\ControllerTrait;
-use NaN\App\Middleware\Router;
+use NaN\App\Middleware\{
+	Router,
+	Router\Route,
+	Router\RoutesCollection,
+};
 use NaN\Http\{
 	Request,
 	Response,
@@ -19,9 +20,7 @@ use Psr\Http\Message\{
 
 describe('App', function () {
 	test('Non-existent route', function () {
-		$routes = new Router();
-
-		$app = new App()->withMiddleware($routes);
+		$app = new App()->withMiddleware(new Router(new RoutesCollection()));
 		$request = new Request('GET', '/bad/route')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
@@ -35,16 +34,17 @@ describe('App', function () {
 	});
 
 	test('Route dependency injection (closure)', function () {
-		$routes = new Router();
-		$routes['/'] = function (PsrServerRequestInterface $request) {
-			expect($request)
-				->toBeInstanceOf(PsrServerRequestInterface::class)
-				->and($request->getAttribute(PsrContainerInterface::class))
+		$routes = new Router(new RoutesCollection(
+			new Route('/', function (PsrServerRequestInterface $request) {
+				expect($request)
+					->toBeInstanceOf(PsrServerRequestInterface::class)
+					->and($request->getAttribute(PsrContainerInterface::class))
 					->toBeInstanceOf(PsrContainerInterface::class)
-			;
+				;
 
-			return new Response(body: 'good');
-		};
+				return new Response(body: 'good');
+			}),
+		));
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/')
@@ -62,11 +62,12 @@ describe('App', function () {
 	});
 
 	test('Route param injection (closure)', function () {
-		$routes = new Router();
-		$routes['/{id}'] = function ($id) {
-			expect($id)->toBe('1');
-			return new Response(body: 'good');
-		};
+		$routes = new Router(new RoutesCollection(
+			new Route('/{id}', function ($id) {
+				expect($id)->toBe('1');
+				return new Response(body: 'good');
+			}),
+		));
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/1')
@@ -84,7 +85,7 @@ describe('App', function () {
 	});
 
 	test('Route controllers', function () {
-		class TestController implements ControllerInterface, GetControllerInterface {
+		class TestController implements ControllerInterface {
 			use ControllerTrait;
 
 			public function get(?PsrServerRequestInterface $request = null, ?int $id = null): PsrResponseInterface {
@@ -101,8 +102,9 @@ describe('App', function () {
 			}
 		}
 
-		$routes = new Router();
-		$routes['/{id}'] = TestController::class;
+		$routes = new Router(new RoutesCollection(
+			new Route('/{id}', TestController::class),
+		));
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/123')
