@@ -17,7 +17,7 @@ use Psr\Http\Server\{
 
 readonly class Router implements PsrMiddlewareInterface {
 	public function __construct(
-		public Router\RoutesCollection $routes,
+		public PsrMiddlewareInterface $routes,
 	) {
 	}
 
@@ -30,12 +30,6 @@ readonly class Router implements PsrMiddlewareInterface {
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
 	): PsrResponseInterface {
-		$route = $this->routes->match($request->getUri()->getPath());
-
-		if (!$route) {
-			return $handler->handle($request);
-		}
-
-		return $route->handle($request);
+		return $this->routes->process($request, $handler);
 	}
 }

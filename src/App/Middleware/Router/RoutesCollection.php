@@ -3,11 +3,20 @@
 namespace NaN\App\Middleware\Router;
 
 use NaN\Collections\Collection;
+use Psr\Container\{
+	ContainerExceptionInterface,
+	NotFoundExceptionInterface,
+};
+use Psr\Http\Message\ServerRequestInterface as PsrServerRequestInterface;
+use Psr\Http\Server\{
+	MiddlewareInterface as PsrMiddlewareInterface,
+	RequestHandlerInterface as PsrRequestHandlerInterface,
+};
 
 /**
  * @note Probably won't ever do anything about how simple we handle parameterized routes.
  */
-class RoutesCollection extends Collection {
+class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 	protected array $_named_routes = [];
 
 	public function __construct(Route ...$routes) {
@@ -61,6 +70,24 @@ class RoutesCollection extends Collection {
 		}
 
 		return $this->_named_routes[$name] ?? null;
+	}
+
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws \ReflectionException
+	 * @throws NotFoundExceptionInterface
+	 */
+	public function process(
+		PsrServerRequestInterface $request,
+		PsrRequestHandlerInterface $handler,
+	): \Psr\Http\Message\ResponseInterface {
+		$route = $this->match($request->getUri()->getPath());
+
+		if (!$route) {
+			return $handler->handle($request);
+		}
+
+		return $route->handle($request);
 	}
 
 	protected function _parsePath(string $path): array {
