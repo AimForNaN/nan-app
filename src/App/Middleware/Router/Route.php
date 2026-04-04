@@ -15,13 +15,17 @@ use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
 	ServerRequestInterface as PsrServerRequestInterface,
 };
-use Psr\Http\Server\RequestHandlerInterface as PsrRequestHandlerInterface;
+use Psr\Http\Server\{
+	MiddlewareInterface as PsrMiddlewareInterface,
+	RequestHandlerInterface as PsrRequestHandlerInterface,
+};
 
-readonly class Route implements PsrRequestHandlerInterface {
+readonly class Route implements PsrMiddlewareInterface, PsrRequestHandlerInterface {
 	public function __construct(
 		public string $path,
 		public \Closure|string|null $handler = null,
 		public ?string $name = null,
+		public ?PsrMiddlewareInterface $middleware = null,
 	) {
 		if (empty($this->path)) {
 			throw new \InvalidArgumentException('Path cannot be empty!');
@@ -74,6 +78,22 @@ readonly class Route implements PsrRequestHandlerInterface {
 		return $this->matches($request->getUri()->getPath());
 	}
 
+	/**
+	 * @throws ContainerExceptionInterface
+	 * @throws \ReflectionException
+	 * @throws NotFoundExceptionInterface
+	 */
+	public function process(
+		PsrServerRequestInterface $request,
+		PsrRequestHandlerInterface $handler,
+	): PsrResponseInterface {
+		if ($this->middleware) {
+			return $this->middleware->process($request, $this);
+		}
+
+		return $this->handle($request);
+	}
+
 	public function toCallable(PsrServerRequestInterface $request): callable {
 		$handler = $this->handler;
 
@@ -116,6 +136,10 @@ readonly class Route implements PsrRequestHandlerInterface {
 
 	public function withHandler(mixed $handler): static {
 		return new self($this->path, $handler);
+	}
+
+	public function withMiddleware(PsrMiddlewareInterface $middleware): static {
+		return new self($this->path, $this->handler, null, $middleware);
 	}
 
 	public function withPath(string $path): static {
