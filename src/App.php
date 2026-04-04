@@ -2,9 +2,7 @@
 
 namespace NaN;
 
-use NaN\App\Middleware\{
-	MiddlewareCollection,
-};
+use NaN\App\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
 use NaN\Http\{Request,Response};
 use Psr\Container\ContainerInterface as PsrContainerInterface;
