@@ -2,7 +2,9 @@
 
 namespace NaN;
 
-use NaN\App\Middleware\Traits\MiddlewareIteratorTrait;
+use NaN\App\Middleware\{
+	MiddlewareCollection,
+};
 use NaN\DI\Container;
 use NaN\Http\{Request,Response};
 use Psr\Container\ContainerInterface as PsrContainerInterface;
@@ -15,45 +17,39 @@ use Psr\Http\Server\{
 	RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
-class App implements \Iterator, PsrRequestHandlerInterface {
-	use MiddlewareIteratorTrait;
-
+readonly class App implements PsrRequestHandlerInterface {
 	public function __construct(
-		public readonly PsrContainerInterface $services = new Container(),
-		iterable $middleware = [],
+		public PsrContainerInterface $services = new Container(),
+		public PsrMiddlewareInterface $middleware = new MiddlewareCollection(),
 	) {
-		$this->_middleware = $middleware;
 	}
 
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		if (!$this->valid()) {
-			return new Response(404);
-		}
-
-		$current = $this->current();
-		$this->next();
-
-		return $current->process($request, $this);
+		return new Response(404);
 	}
 
 	/**
 	 * Exceptions and errors should be handled on a global level
 	 *  (e.g. register_shutdown_function, set_error_handler, set_exception_handler, etc).
 	 */
-	public function run(): void {
-		$req = Request::fromGlobals()
-			->withAttribute(PsrContainerInterface::class, $this->services)
-		;
-		$rsp = $this->handle($req);
+	public function run(?PsrServerRequestInterface $req = null): PsrResponseInterface {
+		if (\is_null($req)) {
+			$req = Request::fromGlobals();
+		}
+
+		$req = $req->withAttribute(PsrContainerInterface::class, $this->services);
+		$rsp = $this->middleware->process($req, $this);
 
 		Response::send($rsp);
+
+		return $rsp;
 	}
 
-	public function withMiddleware(PsrMiddlewareInterface ...$middleware): static {
+	public function withMiddleware(PsrMiddlewareInterface $middleware): static {
 		return new self($this->services, $middleware);
 	}
 
 	public function withServices(PsrContainerInterface $container): static {
-		return new self($container, $this->_middleware);
+		return new self($container, $this->middleware);
 	}
 }

@@ -51,7 +51,7 @@ describe('App', function () {
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
-		$rsp = $app->handle($request);
+		$rsp = $app->run($request);
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
 			->and($rsp->getStatusCode())
@@ -73,7 +73,7 @@ describe('App', function () {
 		$request = new Request('GET', '/1')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
-		$rsp = $app->handle($request);
+		$rsp = $app->run($request);
 
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
@@ -111,7 +111,7 @@ describe('App', function () {
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
-		$rsp = $app->handle($request);
+		$rsp = $app->run($request);
 		expect($rsp->getStatusCode())
 			->toBe(200)
 			->and((string)$rsp->getBody())

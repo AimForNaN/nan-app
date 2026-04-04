@@ -87,7 +87,7 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 			return $handler->handle($request);
 		}
 
-		return $route->handle($request);
+		return $route->process($request, $handler);
 	}
 
 	protected function _parsePath(string $path): array {
