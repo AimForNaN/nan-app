@@ -7,7 +7,9 @@ use NaN\App\Middleware\{
 
 describe('RoutesCollection', function () {
 	test('Contains', function () {
-		$routes = new RoutesCollection(new Route('/nested/deep'));
+		$routes = new RoutesCollection(
+			new Route('/nested/deep'),
+		);
 
 		expect($routes->contains($routes->match('/nested/deep')))->toBeTrue();
 	});
@@ -48,5 +50,20 @@ describe('RoutesCollection', function () {
 		$routes = new RoutesCollection($route);
 
 		expect($route)->toEqual($routes->matchName('home'));
+	});
+
+	test('Static route priority', function () {
+		$nested_route = new Route('/nested');
+		$parameterized_route = new Route('/{id}');
+		$routes = new RoutesCollection(
+			$parameterized_route,
+			$nested_route,
+		);
+
+		expect($routes->match('/nested'))
+			->toBe($nested_route)
+			->and($routes->match('/parameterized'))
+				->toBe($parameterized_route)
+		;
 	});
 });

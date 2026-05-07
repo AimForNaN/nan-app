@@ -50,12 +50,12 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 		$current = $this->_data;
 
 		foreach ($parts as $part) {
-			if (isset($current['_'])) {
-				$part = '_';
-			}
-
 			if (!isset($current[$part])) {
-				return null;
+				if (isset($current['_'])) {
+					$part = '_';
+				} else {
+					return null;
+				}
 			}
 
 			$current = $current[$part];
