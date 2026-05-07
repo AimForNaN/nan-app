@@ -3,15 +3,8 @@
 use NaN\App;
 use NaN\App\Controller\Interfaces\ControllerInterface;
 use NaN\App\Controller\Traits\ControllerTrait;
-use NaN\App\Middleware\{
-	Router,
-	Router\Route,
-	Router\RoutesCollection,
-};
-use NaN\Http\{
-	Request,
-	Response,
-};
+use NaN\App\Middleware\Router\{Route, RoutesCollection};
+use NaN\Http\{Request, Response};
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
@@ -20,7 +13,7 @@ use Psr\Http\Message\{
 
 describe('App', function () {
 	test('Non-existent route', function () {
-		$app = new App()->withMiddleware(new Router(new RoutesCollection()));
+		$app = new App()->withMiddleware(new RoutesCollection());
 		$request = new Request('GET', '/bad/route')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
@@ -34,7 +27,7 @@ describe('App', function () {
 	});
 
 	test('Route dependency injection (closure)', function () {
-		$routes = new Router(new RoutesCollection(
+		$routes = new RoutesCollection(
 			new Route('/', function (PsrServerRequestInterface $request) {
 				expect($request)
 					->toBeInstanceOf(PsrServerRequestInterface::class)
@@ -44,7 +37,7 @@ describe('App', function () {
 
 				return new Response(body: 'good');
 			}),
-		));
+		);
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/')
@@ -62,12 +55,12 @@ describe('App', function () {
 	});
 
 	test('Route param injection (closure)', function () {
-		$routes = new Router(new RoutesCollection(
+		$routes = new RoutesCollection(
 			new Route('/{id}', function ($id) {
 				expect($id)->toBe('1');
 				return new Response(body: 'good');
 			}),
-		));
+		);
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/1')
@@ -102,9 +95,9 @@ describe('App', function () {
 			}
 		}
 
-		$routes = new Router(new RoutesCollection(
+		$routes = new RoutesCollection(
 			new Route('/{id}', TestController::class),
-		));
+		);
 
 		$app = new App()->withMiddleware($routes);
 		$request = new Request('GET', '/123')
