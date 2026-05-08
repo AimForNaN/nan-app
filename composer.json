@@ -7,6 +7,10 @@
 			"NaN\\": "src/"
 		}
 	},
+	"provide": {
+		"psr/http-server-handler-implementation": "^1.0",
+		"psr/http-server-middleware-implementation": "^1.0"
+	},
     "require": {
 		"php": "^8.4",
 		"filp/whoops": "^2.17",
