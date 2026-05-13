@@ -4,7 +4,7 @@ use NaN\App;
 use NaN\App\Controller\Interfaces\ControllerInterface;
 use NaN\App\Controller\Traits\ControllerTrait;
 use NaN\App\Middleware\Router\{Route, RoutesCollection};
-use NaN\Http\{Request, Response};
+use NaN\Http\{Response, ServerRequestFactory};
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
@@ -14,7 +14,7 @@ use Psr\Http\Message\{
 describe('App', function () {
 	test('Non-existent route', function () {
 		$app = new App()->withMiddleware(new RoutesCollection());
-		$request = new Request('GET', '/bad/route')
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/bad/route')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
@@ -35,16 +35,21 @@ describe('App', function () {
 					->toBeInstanceOf(PsrContainerInterface::class)
 				;
 
-				return new Response(body: 'good');
+				$rsp = new Response();
+
+				$rsp->getBody()->write('good');
+
+				return $rsp;
 			}),
 		);
 
 		$app = new App()->withMiddleware($routes);
-		$request = new Request('GET', '/')
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
 		$rsp = $app->run($request);
+
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
 			->and($rsp->getStatusCode())
@@ -58,12 +63,17 @@ describe('App', function () {
 		$routes = new RoutesCollection(
 			new Route('/{id}', function ($id) {
 				expect($id)->toBe('1');
-				return new Response(body: 'good');
+
+				$rsp = new Response();
+
+				$rsp->getBody()->write('good');
+
+				return $rsp;
 			}),
 		);
 
 		$app = new App()->withMiddleware($routes);
-		$request = new Request('GET', '/1')
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/1')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 		$rsp = $app->run($request);
@@ -91,7 +101,12 @@ describe('App', function () {
 					->and($this)
 						->toBeInstanceOf(TestController::class)
 				;
-				return new Response(body: 'good');
+
+				$rsp = new Response();
+
+				$rsp->getBody()->write('good');
+
+				return $rsp;
 			}
 		}
 
@@ -100,11 +115,12 @@ describe('App', function () {
 		);
 
 		$app = new App()->withMiddleware($routes);
-		$request = new Request('GET', '/123')
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/123')
 			->withAttribute(PsrContainerInterface::class, $app->services)
 		;
 
 		$rsp = $app->run($request);
+
 		expect($rsp->getStatusCode())
 			->toBe(200)
 			->and((string)$rsp->getBody())
