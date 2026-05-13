@@ -4,7 +4,12 @@ namespace NaN;
 
 use NaN\App\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
-use NaN\Http\{Request,Response};
+use NaN\Http\{
+	Message,
+	ResponseFactory,
+	ServerRequestFactory,
+	Streams\OutputStream,
+};
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\Message\{
 	ResponseInterface as PsrResponseInterface,
@@ -23,7 +28,7 @@ readonly class App implements PsrRequestHandlerInterface {
 	}
 
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		return new Response(404);
+		return new ResponseFactory()->createResponse(404);
 	}
 
 	/**
@@ -32,15 +37,45 @@ readonly class App implements PsrRequestHandlerInterface {
 	 */
 	public function run(?PsrServerRequestInterface $req = null): PsrResponseInterface {
 		if (\is_null($req)) {
-			$req = Request::fromGlobals();
+			$req = new ServerRequestFactory()->createServerRequest(
+				$_SERVER['REQUEST_METHOD'],
+				$_SERVER['REQUEST_URI'],
+				$_SERVER,
+			);
 		}
 
 		$req = $req->withAttribute(PsrContainerInterface::class, $this->services);
 		$rsp = $this->middleware->process($req, $this);
 
-		Response::send($rsp);
+		static::send($rsp);
 
 		return $rsp;
+	}
+
+	public static function send(PsrResponseInterface $rsp): void {
+		static::sendHeaders($rsp);
+
+		if ($rsp->getStatusCode() !== 204) {
+			static::sendBody($rsp);
+		}
+	}
+
+	public static function sendBody(PsrResponseInterface $rsp): void {
+		new OutputStream()->write((string)$rsp->getBody());
+	}
+
+	public static function sendHeaders(PsrResponseInterface $rsp): void {
+		$version = $rsp->getProtocolVersion();
+		$status = $rsp->getStatusCode();
+		$phrase = $rsp->getReasonPhrase();
+		\header("HTTP/{$version} {$status} {$phrase}");
+
+		$headers = $rsp->getHeaders();
+
+		foreach ($headers as $name => $value) {
+			$value = Message::mergeHeaderValue($value);
+			\header("{$name}: {$value}");
+		}
 	}
 
 	public function withMiddleware(PsrMiddlewareInterface $middleware): static {
