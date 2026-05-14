@@ -7,11 +7,14 @@ use NaN\DI\Container;
 use NaN\Http\{
 	Message,
 	ResponseFactory,
-	ServerRequestFactory,
 	Streams\OutputStream,
 };
+use NaN\DI\Exceptions\NotFoundException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\{
+	ResponseFactoryInterface as PsrResponseFactoryInterface,
 	ResponseInterface as PsrResponseInterface,
 	ServerRequestInterface as PsrServerRequestInterface,
 };
@@ -27,23 +30,23 @@ readonly class App implements PsrRequestHandlerInterface {
 	) {
 	}
 
+	/**
+	 * @throws NotFoundExceptionInterface
+	 * @throws ContainerExceptionInterface
+	 * @throws \ReflectionException
+	 * @throws NotFoundException
+	 */
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		return new ResponseFactory()->createResponse(404);
+		$response_factory = $this->services->get(PsrResponseFactoryInterface::class);
+		return $response_factory->createResponse(404);
 	}
 
 	/**
 	 * Exceptions and errors should be handled on a global level
 	 *  (e.g. register_shutdown_function, set_error_handler, set_exception_handler, etc).
 	 */
-	public function run(?PsrServerRequestInterface $req = null): PsrResponseInterface {
-		if (\is_null($req)) {
-			$req = new ServerRequestFactory()->createServerRequest(
-				$_SERVER['REQUEST_METHOD'],
-				$_SERVER['REQUEST_URI'],
-				$_SERVER,
-			);
-		}
-
+	public function run(): PsrResponseInterface {
+		$req = $this->services->get(PsrServerRequestInterface::class);
 		$req = $req->withAttribute(PsrContainerInterface::class, $this->services);
 		$rsp = $this->middleware->process($req, $this);
 
