@@ -13,16 +13,15 @@
 	},
     "require": {
 		"php": "^8.4",
-		"filp/whoops": "^2.17",
+		"aimfornan/nan-collections": "dev-main",
+		"aimfornan/nan-di": "^0.1.0",
+		"aimfornan/nan-http": "^0.0.4",
 		"league/plates": "^3.5",
 		"monolog/monolog": "^3.6",
 		"psr/http-server-handler": "^1.0",
 		"psr/http-server-middleware": "^1.0",
-		"vlucas/phpdotenv": "^5.6",
 		"nikic/iter": "^2.4",
-		"aimfornan/nan-collections": "dev-main",
-		"aimfornan/nan-di": "^0.0.1",
-		"aimfornan/nan-http": "^0.0.4"
+		"vlucas/phpdotenv": "^5.6"
 	},
 	"config": {
 		"allow-plugins": {
@@ -38,6 +37,7 @@
 		"tests": "pest --display-warnings -v"
 	},
 	"require-dev": {
+		"filp/whoops": "^2.17",
 		"pestphp/pest": "^4.4",
 		"phpbench/phpbench": "^1.5"
 	}
