@@ -15,13 +15,13 @@
 		"php": "^8.4",
 		"aimfornan/nan-collections": "dev-main",
 		"aimfornan/nan-di": "^0.1.0",
-		"aimfornan/nan-http": "^0.0.4",
+		"aimfornan/nan-http": "^0.0.5",
 		"league/plates": "^3.5",
 		"monolog/monolog": "^3.6",
 		"psr/http-server-handler": "^1.0",
 		"psr/http-server-middleware": "^1.0",
 		"nikic/iter": "^2.4",
-		"vlucas/phpdotenv": "^5.6"
+		"vlucas/phpdotenv": "^5.6",
 	},
 	"config": {
 		"allow-plugins": {

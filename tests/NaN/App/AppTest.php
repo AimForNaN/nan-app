@@ -1,11 +1,14 @@
 <?php
 
-use NaN\App;
-use NaN\App\Controller\{
+use NaN\Application\Controller\{
 	Interfaces\ControllerInterface,
 	Traits\ControllerTrait,
 };
-use NaN\App\Middleware\Router\{Route, RoutesCollection};
+use NaN\Application\Middleware\{
+	Router\RoutesCollection,
+	Router\Route,
+};
+use NaN\Application\NativeApplication as App;
 use NaN\DI\Container;
 use NaN\Http\{
 	Response,
@@ -28,7 +31,7 @@ describe('App', function () {
 			new RoutesCollection(),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/bad/route');
-		$rsp = $app->handle($request);
+		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
 
 		expect($rsp)
 			->toBeInstanceOf(PsrResponseInterface::class)
@@ -38,68 +41,53 @@ describe('App', function () {
 	});
 
 	test('Route dependency injection (closure)', function () {
-		$routes = new RoutesCollection(
-			new Route('/', function (PsrServerRequestInterface $request) {
-				expect($request)
-					->toBeInstanceOf(PsrServerRequestInterface::class)
-					->and($request->getAttribute(PsrContainerInterface::class))
-					->toBeInstanceOf(PsrContainerInterface::class)
-				;
-
-				$rsp = new Response();
-
-				$rsp->getBody()->write('good');
-
-				return $rsp;
-			}),
-		);
 		$app = new App(
 			new Container([
-				PsrServerRequestInterface::class => new ServerRequestFactory()->createServerRequest(
-					'GET',
-					'/',
-				),
+				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
-			$routes,
-		);
-		$rsp = $app->run();
+			new RoutesCollection(
+				new Route('/', function (PsrServerRequestInterface $request) {
+					expect($request->getAttribute(PsrContainerInterface::class))
+							->toBeInstanceOf(PsrContainerInterface::class)
+					;
 
-		expect($app->services->get(PsrServerRequestInterface::class))->toBeInstanceOf(PsrServerRequestInterface::class)
-			->and($rsp)->toBeInstanceOf(PsrResponseInterface::class)
-			->and($rsp->getStatusCode())->toBe(200)
+					$rsp = new Response();
+
+					$rsp->getBody()->write('good');
+
+					return $rsp;
+				}),
+			),
+		);
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/');
+		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
+
+		expect($rsp->getStatusCode())->toBe(200)
 			->and((string)$rsp->getBody())->toBe('good')
 		;
 	});
 
 	test('Route param injection (closure)', function () {
-		$routes = new RoutesCollection(
-			new Route('/{id}', function ($id) {
-				expect($id)->toBe('1');
-
-				$rsp = new Response();
-
-				$rsp->getBody()->write('good');
-
-				return $rsp;
-			}),
-		);
 		$app = new App(
 			new Container([
-				PsrServerRequestInterface::class => new ServerRequestFactory()->createServerRequest(
-					'GET',
-					'/1',
-				),
+				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
-			$routes,
-		);
-		$rsp = $app->run();
-		/** @var PsrServerRequestInterface $server_request */
-		$server_request = $app->services->get(PsrServerRequestInterface::class);
+			new RoutesCollection(
+				new Route('/{id}', function (PsrResponseFactoryInterface $factory, $id) {
+					expect($id)->toBe('1');
 
-		expect($server_request)->toBeInstanceOf(PsrServerRequestInterface::class)
-			->and($server_request->getUri()->getPath())->toBe('/1')
-			->and($rsp)->toBeInstanceOf(PsrResponseInterface::class)
-			->and($rsp->getStatusCode())->toBe(200)
+					$rsp = $factory->createResponse();
+
+					$rsp->getBody()->write('good');
+
+					return $rsp;
+				}),
+			),
+		);
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/1');
+		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
+
+		expect($rsp->getStatusCode())->toBe(200)
 			->and((string)$rsp->getBody())->toBe('good')
 		;
 	});
@@ -108,18 +96,20 @@ describe('App', function () {
 		class TestController implements ControllerInterface {
 			use ControllerTrait;
 
-			public function get(?PsrServerRequestInterface $request = null, ?int $id = null): PsrResponseInterface {
+			public function get(
+				?PsrResponseFactoryInterface $factory = null,
+				?PsrServerRequestInterface $request = null,
+				?int $id = null,
+			): PsrResponseInterface {
 				expect($id)
 					->toBe(123)
-					->and($request)
-						->toBeInstanceOf(PsrServerRequestInterface::class)
 					->and($request->getAttribute(PsrContainerInterface::class))
 						->toBeInstanceOf(PsrContainerInterface::class)
 					->and($this)
 						->toBeInstanceOf(TestController::class)
 				;
 
-				$rsp = new Response();
+				$rsp = $factory->createResponse();
 
 				$rsp->getBody()->write('good');
 
@@ -127,28 +117,24 @@ describe('App', function () {
 			}
 		}
 
-		$routes = new RoutesCollection(
-			new Route('/{id}', TestController::class),
-		);
 		$app = new App(
 			new Container([
-				PsrServerRequestInterface::class => new ServerRequestFactory()->createServerRequest(
-					'GET',
-					'/123',
-				),
+				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
-			$routes,
+			new RoutesCollection(
+				new Route('/{id}', TestController::class),
+			),
 		);
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/123');
+		$request = $request->withAttribute(PsrContainerInterface::class, $app->services);
+		$rsp = $app->handle($request);
 
-		$rsp = $app->run();
-		/** @var PsrServerRequestInterface $server_request */
-		$server_request = $app->services->get(PsrServerRequestInterface::class);
-
-		expect($server_request)->toBeInstanceOf(PsrServerRequestInterface::class)
-			->and($server_request->getUri()->getPath())->toBe('/123')
-			->and($rsp)->toBeInstanceOf(PsrResponseInterface::class)
-			->and($rsp->getStatusCode())->toBe(200)
+		expect($rsp->getStatusCode())->toBe(200)
 			->and((string)$rsp->getBody())->toBe('good')
 		;
+
+		$rsp = $app->handle($request->withMethod('POST'));
+
+		expect($rsp->getStatusCode())->toBe(405);
 	});
 });

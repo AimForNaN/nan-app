@@ -1,8 +1,8 @@
 <?php
 
-use NaN\App\Middleware\{
-	Router\Route,
+use NaN\Application\Middleware\{
 	Router\RoutesCollection,
+	Router\Route,
 };
 
 describe('RoutesCollection', function () {
