@@ -7,6 +7,7 @@ use NaN\Application\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
 use NaN\Http\{
 	Message,
+	ServerRequestFactory,
 	Streams\OutputStream,
 };
 use Psr\Container\{
@@ -40,7 +41,12 @@ readonly class NativeApplication implements Interfaces\ApplicationInterface {
 	 * @throws \ReflectionException
 	 */
 	public function run(): void {
-		$req = $this->services->get(PsrServerRequestInterface::class);
+		if ($this->services->has(PsrContainerInterface::class)) {
+			$req = $this->services->get(PsrServerRequestInterface::class);
+		} else {
+			$req = new ServerRequestFactory()->createServerRequest('', '', $_SERVER);
+		}
+
 		$req = $req->withAttribute(PsrContainerInterface::class, $this->services);
 		$rsp = $this->handle($req);
 
