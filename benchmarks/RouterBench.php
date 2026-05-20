@@ -1,10 +1,19 @@
 <?php
 
-use NaN\App\Middleware\Router\{Route, RoutesCollection};
-use NaN\Http\{
-	Request,
-	Response,
+use NaN\Application\Middleware\Router\{
+	Route,
+	RoutesCollection,
 };
+use NaN\Http\{
+	Response,
+	ServerRequestFactory,
+};
+
+if (!\function_exists('getallheaders')) {
+	function getallheaders() {
+		return [];
+	}
+}
 
 class RouterBench {
 	/**
@@ -83,7 +92,7 @@ class RouterBench {
 	 */
 	public function benchParamNanRouterLookup(): void {
 		$routes = $this->benchParamNanRouterInsertManual();
-		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 		$route = $routes->match($request->getUri()->getPath());
 	}
 
@@ -94,13 +103,9 @@ class RouterBench {
 	 */
 	public function benchParamNanRoutesArrayLookup(): void {
 		$routes = $this->benchParamNanRoutesArrayInsert();
-		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 
-		foreach ($routes as $route) {
-			if ($route->matchesRequest($request)) {
-				return;
-			}
-		}
+		\array_any($routes, fn($route) => $route->matchesRequest($request));
 	}
 
 	/**
@@ -110,7 +115,7 @@ class RouterBench {
 	 */
 	public function benchStaticNanRouterLookup(): void {
 		$routes = $this->benchStaticNanRouterInsertManual();
-		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 		$route = $routes->match($request->getUri()->getPath());
 	}
 
@@ -121,12 +126,8 @@ class RouterBench {
 	 */
 	public function benchStaticNanRoutesArrayLookup(): void {
 		$routes = $this->benchStaticNanRoutesArrayInsert();
-		$request = new Request('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 
-		foreach ($routes as $route) {
-			if ($route->matchesRequest($request)) {
-				return;
-			}
-		}
+		\array_any($routes, fn($route) => $route->matchesRequest($request));
 	}
 }
