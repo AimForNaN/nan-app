@@ -22,10 +22,13 @@ class NotFoundHandler implements PsrRequestHandlerInterface {
 	 * @throws \ReflectionException
 	 */
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		$services = $request->getAttribute(PsrContainerInterface::class) ?? new Container([
-			PsrResponseFactoryInterface::class => new ResponseFactory(),
-		]);
-		$response_factory = $services->get(PsrResponseFactoryInterface::class);
+		$services = $request->getAttribute(PsrContainerInterface::class);
+
+		if ($services->has(PsrResponseFactoryInterface::class)) {
+			$response_factory = $services->get(PsrResponseFactoryInterface::class);
+		} else {
+			$response_factory = new ResponseFactory();
+		}
 
 		return $response_factory->createResponse(404);
 	}

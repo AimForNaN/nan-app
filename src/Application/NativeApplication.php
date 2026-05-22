@@ -29,6 +29,8 @@ readonly class NativeApplication implements Interfaces\ApplicationInterface {
 	}
 
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
+		$request = $request->withAttribute(PsrContainerInterface::class, $this->services);
+
 		return $this->middleware->process($request, new NotFoundHandler());
 	}
 
@@ -41,13 +43,12 @@ readonly class NativeApplication implements Interfaces\ApplicationInterface {
 	 * @throws \ReflectionException
 	 */
 	public function run(): void {
-		if ($this->services->has(PsrContainerInterface::class)) {
+		if ($this->services->has(PsrServerRequestInterface::class)) {
 			$req = $this->services->get(PsrServerRequestInterface::class);
 		} else {
 			$req = new ServerRequestFactory()->createServerRequest('', '', $_SERVER);
 		}
 
-		$req = $req->withAttribute(PsrContainerInterface::class, $this->services);
 		$rsp = $this->handle($req);
 
 		static::sendResponse($rsp);

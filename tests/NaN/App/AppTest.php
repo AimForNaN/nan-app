@@ -23,6 +23,16 @@ use Psr\Http\Message\{
 };
 
 describe('App', function () {
+	test('Empty services', function () {
+		$app = new App();
+		$request = new ServerRequestFactory()->createServerRequest('GET', '/');
+		$rsp = $app->handle($request);
+
+		expect($rsp->getStatusCode())
+			->toBe(404)
+		;
+	});
+
 	test('Non-existent route', function () {
 		$app = new App(
 			new Container([
@@ -31,11 +41,9 @@ describe('App', function () {
 			new RoutesCollection(),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/bad/route');
-		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
+		$rsp = $app->handle($request);
 
-		expect($rsp)
-			->toBeInstanceOf(PsrResponseInterface::class)
-			->and($rsp->getStatusCode())
+		expect($rsp->getStatusCode())
 				->toBe(404)
 		;
 	});
@@ -60,7 +68,7 @@ describe('App', function () {
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/');
-		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
+		$rsp = $app->handle($request);
 
 		expect($rsp->getStatusCode())->toBe(200)
 			->and((string)$rsp->getBody())->toBe('good')
@@ -85,7 +93,7 @@ describe('App', function () {
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/1');
-		$rsp = $app->handle($request->withAttribute(PsrContainerInterface::class, $app->services));
+		$rsp = $app->handle($request);
 
 		expect($rsp->getStatusCode())->toBe(200)
 			->and((string)$rsp->getBody())->toBe('good')
@@ -126,7 +134,6 @@ describe('App', function () {
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/123');
-		$request = $request->withAttribute(PsrContainerInterface::class, $app->services);
 		$rsp = $app->handle($request);
 
 		expect($rsp->getStatusCode())->toBe(200)
