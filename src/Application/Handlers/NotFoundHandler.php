@@ -24,11 +24,14 @@ class NotFoundHandler implements PsrRequestHandlerInterface {
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
 		$services = $request->getAttribute(PsrContainerInterface::class);
 
-		if ($services->has(PsrResponseFactoryInterface::class)) {
+		if (
+			$services instanceof PsrContainerInterface &&
+			$services->has(PsrResponseFactoryInterface::class)
+		) {
 			$response_factory = $services->get(PsrResponseFactoryInterface::class);
-		} else {
-			$response_factory = new ResponseFactory();
 		}
+
+		$response_factory ??= new ResponseFactory();
 
 		return $response_factory->createResponse(404);
 	}

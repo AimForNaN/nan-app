@@ -45,10 +45,9 @@ readonly class NativeApplication implements Interfaces\ApplicationInterface {
 	public function run(): void {
 		if ($this->services->has(PsrServerRequestInterface::class)) {
 			$req = $this->services->get(PsrServerRequestInterface::class);
-		} else {
-			$req = new ServerRequestFactory()->createServerRequest('', '', $_SERVER);
 		}
 
+		$req ??= new ServerRequestFactory()->createServerRequest('', '', $_SERVER);
 		$rsp = $this->handle($req);
 
 		static::sendResponse($rsp);
