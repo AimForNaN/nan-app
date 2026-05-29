@@ -5,8 +5,7 @@ namespace NaN\Application\Middleware\Router;
 use NaN\Application\Controller\Interfaces\ControllerInterface;
 use NaN\DI\{
 	Arguments,
-	Container,
-};
+	DelegatesContainer};
 use NaN\Http\Response;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
@@ -50,7 +49,7 @@ readonly class Route implements PsrMiddlewareInterface, PsrRequestHandlerInterfa
 			$delegates[] = $services;
 		}
 
-		$container = new Container([
+		$container = new DelegatesContainer([
 			PsrServerRequestInterface::class => $request,
 		], $delegates);
 
