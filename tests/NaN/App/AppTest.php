@@ -34,12 +34,7 @@ describe('App', function () {
 	});
 
 	test('Non-existent route', function () {
-		$app = new App(
-			new Container([
-				PsrResponseFactoryInterface::class => new ResponseFactory(),
-			]),
-			new RoutesCollection(),
-		);
+		$app = new App();
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/bad/route');
 		$rsp = $app->handle($request);
 
@@ -50,13 +45,11 @@ describe('App', function () {
 
 	test('Route dependency injection (closure)', function () {
 		$app = new App(
-			new Container([
-				PsrResponseFactoryInterface::class => new ResponseFactory(),
-			]),
+			new Container(),
 			new RoutesCollection(
 				new Route('/', function (PsrServerRequestInterface $request) {
 					expect($request->getAttribute(PsrContainerInterface::class))
-							->toBeInstanceOf(PsrContainerInterface::class)
+						->toBeInstanceOf(PsrContainerInterface::class)
 					;
 
 					$rsp = new Response();
@@ -109,8 +102,11 @@ describe('App', function () {
 				?PsrServerRequestInterface $request = null,
 				?int $id = null,
 			): PsrResponseInterface {
-				expect($id)
-					->toBe(123)
+				expect($id)->toBe(123)
+					->and($factory)
+						->toBeInstanceOf(PsrResponseFactoryInterface::class)
+					->and($request)
+						->toBeInstanceOf(PsrServerRequestInterface::class)
 					->and($request->getAttribute(PsrContainerInterface::class))
 						->toBeInstanceOf(PsrContainerInterface::class)
 					->and($this)
