@@ -14,8 +14,8 @@
     "require": {
 		"php": "^8.4",
 		"aimfornan/nan-collections": "dev-main",
-		"aimfornan/nan-di": "^0.1.0",
-		"aimfornan/nan-http": "^0.1.0",
+		"aimfornan/nan-di": "^0.2.1",
+		"aimfornan/nan-http": "^0.1.1",
 		"league/plates": "^3.5",
 		"monolog/monolog": "^3.6",
 		"psr/http-server-handler": "^1.0",
