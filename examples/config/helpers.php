@@ -1,19 +1,16 @@
 <?php
 
-use NaN\App;
-use NaN\App\TemplateEngine;
+use NaN\Application\NativeApplication as App;
 use NaN\Database\Query\Builders\Interfaces\QueryBuilderInterface;
 use NaN\Database\Sql\Drivers\SqlDriver;
 use NaN\Env;
+use NaN\Template\TemplateEngine;
 
 function app(): App {
-	static $app = null;
-
-	if (!$app) {
-		$services = include(__DIR__ . '/services.php');
-		$middleware = include(__DIR__ . '/middleware.php');
-		$app = new App($services, $middleware);
-	}
+	static $app = new App(
+		include(__DIR__ . '/services.php'),
+		include(__DIR__ . '/middleware.php'),
+	);
 
 	return $app;
 }

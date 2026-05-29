@@ -1,12 +1,19 @@
 <?php
 
-use NaN\App\Middleware\Router\{Route, RoutesCollection};
+use NaN\Application\Middleware\Router\{
+	Route,
+	RoutesCollection,
+};
 use NaN\Http\Response;
 
 return new RoutesCollection(
 	new Route('/', function () {
-		return new Response(body: tpl()->render('index', [
+		$rsp = new Response();
+
+		$rsp->getBody()->write(tpl()->render('index', [
 			'title' => env('TITLE', 'NaN'),
 		]));
+
+		return $rsp;
 	}),
 );

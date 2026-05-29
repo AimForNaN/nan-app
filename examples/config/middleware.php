@@ -1,5 +1,7 @@
 <?php
 
+use NaN\Application\Middleware\MiddlewareCollection;
+
 $router = include(__DIR__ . '/routes.php');
 
-return [$router];
+return new MiddlewareCollection($router);
