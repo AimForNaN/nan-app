@@ -48,9 +48,7 @@ describe('App', function () {
 			new Container(),
 			new RoutesCollection(
 				new Route('/', function (PsrServerRequestInterface $request) {
-					expect($request->getAttribute(PsrContainerInterface::class))
-						->toBeInstanceOf(PsrContainerInterface::class)
-					;
+					expect($request->getAttribute(PsrContainerInterface::class))->toBeNull();
 
 					$rsp = new Response();
 
@@ -108,7 +106,7 @@ describe('App', function () {
 					->and($request)
 						->toBeInstanceOf(PsrServerRequestInterface::class)
 					->and($request->getAttribute(PsrContainerInterface::class))
-						->toBeInstanceOf(PsrContainerInterface::class)
+						->toBeNull()
 					->and($this)
 						->toBeInstanceOf(TestController::class)
 				;
