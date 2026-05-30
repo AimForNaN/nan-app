@@ -4,7 +4,7 @@ namespace NaN\Application\Interfaces;
 
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 
-interface ServicesApplicationInterface {
+interface ServicesApplicationInterface extends ApplicationInterface {
 	public PsrContainerInterface $services {
 		get;
 	}
