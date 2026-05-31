@@ -13,7 +13,8 @@
 	},
     "require": {
 		"php": "^8.4",
-		"aimfornan/nan-collections": "dev-main",
+		"aimfornan/nan-collections": "^0.0.1",
+		"aimfornan/nan-db": "^0.0.1",
 		"aimfornan/nan-di": "^0.2.1",
 		"aimfornan/nan-http": "^0.1.1",
 		"league/plates": "^3.5",
