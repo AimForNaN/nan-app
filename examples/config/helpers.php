@@ -1,12 +1,13 @@
 <?php
 
+use NaN\Application\Interfaces\ApplicationInterface;
 use NaN\Application\NativeApplication as App;
 use NaN\Database\Query\Builders\Interfaces\QueryBuilderInterface;
 use NaN\Database\Sql\Drivers\SqlDriver;
 use NaN\Env;
 use NaN\Template\TemplateEngine;
 
-function app(): App {
+function app(): ApplicationInterface {
 	static $app = new App(
 		include(__DIR__ . '/services.php'),
 		include(__DIR__ . '/middleware.php'),

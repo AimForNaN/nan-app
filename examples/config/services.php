@@ -1,6 +1,9 @@
 <?php
 
-use NaN\Http\{ResponseFactory, ServerRequestFactory};
+use NaN\Http\{
+	ResponseFactory,
+	ServerRequestFactory,
+};
 use Psr\Http\{
 	Message\ResponseFactoryInterface,
 	Message\ServerRequestInterface,
