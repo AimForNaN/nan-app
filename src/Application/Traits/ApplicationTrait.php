@@ -2,7 +2,7 @@
 
 namespace NaN\Application\Traits;
 
-use NaN\Application\Handlers\NotFoundHandler;
+use NaN\Http\RequestHandlers\NotFoundRequestHandler;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\{
 	Message\ResponseInterface as PsrResponseInterface,
@@ -18,6 +18,6 @@ trait ApplicationTrait {
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
 		$request = $request->withAttribute(PsrContainerInterface::class, $this->services);
 
-		return $this->middleware->process($request, new NotFoundHandler());
+		return $this->middleware->process($request, new NotFoundRequestHandler());
 	}
 }
