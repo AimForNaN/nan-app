@@ -16,7 +16,7 @@
 		"aimfornan/nan-collections": "^0.1.0",
 		"aimfornan/nan-db": "^0.4.1",
 		"aimfornan/nan-di": "^0.4.0",
-		"aimfornan/nan-http": "^0.5.0",
+		"aimfornan/nan-http": "^0.6.0",
 		"league/plates": "^3.5",
 		"monolog/monolog": "^3.6",
 		"psr/http-server-handler": "^1.0",
