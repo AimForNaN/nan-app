@@ -2,32 +2,34 @@
 
 namespace NaN\Application\Middleware;
 
-use Psr\Http\Message\{
-	ResponseInterface as PsrResponseInterface,
-	ServerRequestInterface as PsrServerRequestInterface,
-};
-use Psr\Http\Server\{
-	MiddlewareInterface as PsrMiddlewareInterface,
-	RequestHandlerInterface as PsrRequestHandlerInterface,
+use NaN\Collections\Collection;
+use Psr\Http\{
+	Message\ResponseInterface as PsrResponseInterface,
+	Message\ServerRequestInterface as PsrServerRequestInterface,
+	Server\MiddlewareInterface as PsrMiddlewareInterface,
+	Server\RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
 class MiddlewareCollection
+extends
+	Collection
 implements
 	PsrMiddlewareInterface,
 	PsrRequestHandlerInterface
 {
-	protected iterable $_handlers = [];
+	protected PsrRequestHandlerInterface $_handler;
 
 	public function __construct(
-		PsrMiddlewareInterface|PsrRequestHandlerInterface ...$middleware,
+		PsrMiddlewareInterface ...$middleware,
 	) {
-		$this->_handlers = $middleware;
+		parent::__construct(...$middleware);
 	}
-	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		$current = \reset($this->_handlers);
 
-		if ($current instanceof PsrRequestHandlerInterface) {
-			return $current->handle($request);
+	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
+		$current = $this->getFirst();
+
+		if (!$current) {
+			return $this->_handler->handle($request);
 		}
 
 		return $current->process($request, $this->withoutMiddleware($current));
@@ -37,16 +39,19 @@ implements
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
 	): PsrResponseInterface {
-		$middleware = [...$this->_handlers, $handler];
+		$this->_handler = $handler;
 
-		return new static(...$middleware)->handle($request);
+		return $this->handle($request);
 	}
 
 	public function withoutMiddleware(
 		PsrMiddlewareInterface $middleware
 	): PsrMiddlewareInterface|PsrRequestHandlerInterface {
 		return new static(
-			...\array_filter($this->_handlers, fn($child) => $middleware !== $child),
+			...\iter\filter(
+				fn($child) => $middleware !== $child,
+				$this->getIterator(),
+			),
 		);
 	}
 }

@@ -16,8 +16,14 @@ use Psr\Http\{
  */
 trait ApplicationTrait {
 	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		$request = $request->withAttribute(PsrContainerInterface::class, $this->services);
+		$request = $request->withAttribute(
+			PsrContainerInterface::class,
+			$this->services,
+		);
 
-		return $this->middleware->process($request, new NotFoundRequestHandler());
+		return $this->middleware->process(
+			$request,
+			new NotFoundRequestHandler(),
+		);
 	}
 }

@@ -20,8 +20,12 @@ use Psr\Http\Message\{
 };
 use Psr\Http\Server\MiddlewareInterface as PsrMiddlewareInterface;
 
-readonly class NativeApplication
-implements MiddlewareApplicationInterface, ServicesApplicationInterface {
+readonly class
+	NativeApplication
+implements
+	MiddlewareApplicationInterface,
+	ServicesApplicationInterface
+{
 	use Traits\ApplicationTrait;
 
 	public function __construct(

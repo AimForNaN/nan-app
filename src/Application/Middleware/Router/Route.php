@@ -2,24 +2,24 @@
 
 namespace NaN\Application\Middleware\Router;
 
-use NaN\Application\Controller\Interfaces\ControllerInterface;
-use NaN\DI\{
-	Arguments,
-	DelegatesContainer};
-use NaN\Http\Response;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface as PsrContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use Psr\Http\Message\{
-	ResponseInterface as PsrResponseInterface,
-	ServerRequestInterface as PsrServerRequestInterface,
+use NaN\Application\Middleware\MiddlewareCollection;
+use NaN\Http\{
+	ResponseFactory,
+	ServerRequest,
 };
-use Psr\Http\Server\{
-	MiddlewareInterface as PsrMiddlewareInterface,
-	RequestHandlerInterface as PsrRequestHandlerInterface,
+use Psr\Container\{
+	ContainerExceptionInterface as PsrContainerExceptionInterface,
+	NotFoundExceptionInterface as PsrNotFoundExceptionInterface,
+};
+use Psr\Http\{
+	Message\ResponseFactoryInterface as PsrResponseFactoryInterface,
+	Message\ResponseInterface as PsrResponseInterface,
+	Message\ServerRequestInterface as PsrServerRequestInterface,
+	Server\MiddlewareInterface as PsrMiddlewareInterface,
+	Server\RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
-readonly class Route implements PsrMiddlewareInterface, PsrRequestHandlerInterface {
+readonly class Route implements PsrMiddlewareInterface {
 	public function __construct(
 		public string $path,
 		public \Closure|string|null $handler = null,
@@ -29,38 +29,6 @@ readonly class Route implements PsrMiddlewareInterface, PsrRequestHandlerInterfa
 		if (empty($this->path)) {
 			throw new \InvalidArgumentException('Path cannot be empty!');
 		}
-	}
-
-	/**
-	 * @throws ContainerExceptionInterface
-	 * @throws NotFoundExceptionInterface
-	 * @throws \ReflectionException
-	 */
-	public function handle(PsrServerRequestInterface $request): PsrResponseInterface {
-		$pattern = new RoutePattern($this->path);
-		$pattern->compile();
-		$pattern->matchesRequest($request);
-
-		$values = $pattern->getMatches();
-		$handler = $this->toCallable($request);
-		$delegates = [];
-
-		if ($services = $request->getAttribute(PsrContainerInterface::class)) {
-			$delegates[] = $services;
-		}
-
-		$container = new DelegatesContainer([
-			PsrServerRequestInterface::class => $request->withoutAttribute(PsrContainerInterface::class),
-		], $delegates);
-
-		$args = Arguments::fromCallable($handler);
-		$values = $args->resolve($values, $container);
-
-		return $handler(...$values);
-	}
-
-	public function isNull(): bool {
-		return \is_null($this->handler);
 	}
 
 	public function matches(string $path): bool {
@@ -78,46 +46,35 @@ readonly class Route implements PsrMiddlewareInterface, PsrRequestHandlerInterfa
 	}
 
 	/**
-	 * @throws ContainerExceptionInterface
+	 * @throws PsrContainerExceptionInterface
+	 * @throws PsrNotFoundExceptionInterface
 	 * @throws \ReflectionException
-	 * @throws NotFoundExceptionInterface
 	 */
 	public function process(
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
 	): PsrResponseInterface {
-		if ($this->middleware) {
-			return $this->middleware->process($request, $this);
+		if (\is_null($this->handler)) {
+			$response_factory = ServerRequest::getServiceFromRequest(
+				PsrResponseFactoryInterface::class,
+				$request,
+				ResponseFactory::class,
+			);
+
+			return $response_factory->createResponse(501);
 		}
 
-		return $this->handle($request);
-	}
+		$middleware = [];
 
-	public function toCallable(PsrServerRequestInterface $request): callable {
-		$handler = $this->handler;
-
-		if ($this->isNull()) {
-			return function (): PsrResponseInterface {
-				return new Response(501);
-			};
+		if ($this->middleware instanceof PsrMiddlewareInterface) {
+			$middleware[] = $this->middleware;
 		}
 
-		if (\is_subclass_of($handler, ControllerInterface::class))  {
-			$handler = new $handler();
-			$allowed_methods = $handler->getAllowedMethods();
-			$method = $request->getMethod();
+		$middleware[] = new RouteHandler($this);
 
-			if (isset($allowed_methods[$method])) {
-				$method = \strtolower($method);
-				return $handler->$method(...);
-			}
+		$middleware = new MiddlewareCollection(...$middleware);
 
-			return fn(): PsrResponseInterface => new Response(405, '', [
-				'Allow' => \implode(', ', $allowed_methods),
-			]);
-		}
-
-		return \Closure::bind($handler, $this);
+		return $middleware->process($request, $handler);
 	}
 
 	/**

@@ -4,8 +4,8 @@ namespace NaN\Application\Middleware\Router;
 
 use NaN\Collections\Collection;
 use Psr\Container\{
-	ContainerExceptionInterface,
-	NotFoundExceptionInterface,
+	ContainerExceptionInterface as PsrContainerExceptionInterface,
+	NotFoundExceptionInterface as PsrNotFoundExceptionInterface,
 };
 use Psr\Http\Message\ServerRequestInterface as PsrServerRequestInterface;
 use Psr\Http\Server\{
@@ -17,6 +17,8 @@ use Psr\Http\Server\{
  * @note Probably won't ever do anything about how simple we handle parameterized routes.
  */
 class RoutesCollection extends Collection implements PsrMiddlewareInterface {
+	const string PART = '#';
+
 	protected array $_named_routes = [];
 
 	public function __construct(Route ...$routes) {
@@ -51,8 +53,8 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 
 		foreach ($parts as $part) {
 			if (!isset($current[$part])) {
-				if (isset($current['_'])) {
-					$part = '_';
+				if (isset($current[self::PART])) {
+					$part = self::PART;
 				} else {
 					return null;
 				}
@@ -73,9 +75,9 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 	}
 
 	/**
-	 * @throws ContainerExceptionInterface
+	 * @throws PsrContainerExceptionInterface
+	 * @throws PsrNotFoundExceptionInterface
 	 * @throws \ReflectionException
-	 * @throws NotFoundExceptionInterface
 	 */
 	public function process(
 		PsrServerRequestInterface $request,
@@ -107,7 +109,7 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 
 		foreach ($parts as $part) {
 			if (RoutePattern::checkParameters($part)) {
-				$part = '_';
+				$part = self::PART;
 			}
 
 			if (!isset($current[$part])) {
