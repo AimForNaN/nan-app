@@ -2,7 +2,7 @@
 
 namespace NaN\Application\Middleware\Router;
 
-use NaN\Application\Middleware\MiddlewareCollection;
+use NaN\Collections\Middleware\MiddlewareCollection;
 use NaN\Http\{
 	ResponseFactory,
 	ServerRequest,

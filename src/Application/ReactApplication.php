@@ -5,8 +5,8 @@ namespace NaN\Application;
 use NaN\Application\{
 	Interfaces\MiddlewareApplicationInterface,
 	Interfaces\ServicesApplicationInterface,
-	Middleware\MiddlewareCollection,
 };
+use NaN\Collections\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\{

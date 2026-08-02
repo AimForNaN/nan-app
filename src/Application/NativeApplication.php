@@ -5,20 +5,19 @@ namespace NaN\Application;
 use NaN\Application\{
 	Interfaces\MiddlewareApplicationInterface,
 	Interfaces\ServicesApplicationInterface,
-	Middleware\MiddlewareCollection,
 };
+use NaN\Collections\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
 use NaN\Http\{
-	Message,
-	ServerRequestFactory,
+	Message,ServerRequestFactory,
 	Streams\OutputStream,
 };
 use Psr\Container\ContainerInterface as PsrContainerInterface;
-use Psr\Http\Message\{
-	ResponseInterface as PsrResponseInterface,
-	ServerRequestInterface as PsrServerRequestInterface,
+use Psr\Http\{
+	Message\ResponseInterface as PsrResponseInterface,
+	Message\ServerRequestInterface as PsrServerRequestInterface,
+	Server\MiddlewareInterface as PsrMiddlewareInterface,
 };
-use Psr\Http\Server\MiddlewareInterface as PsrMiddlewareInterface;
 
 readonly class
 	NativeApplication
