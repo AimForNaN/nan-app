@@ -79,7 +79,7 @@ readonly class RouteHandler implements PsrMiddlewareInterface {
 
 		$container = new DelegatesContainer([
 			PsrServerRequestInterface::class => $request->withoutAttribute(PsrContainerInterface::class),
-		], $delegates);
+		])->withDelegates(...$delegates);
 
 		$args = Arguments::fromCallable($handler);
 		$values = $args->resolve($values, $container);
