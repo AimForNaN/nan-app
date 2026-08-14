@@ -5,6 +5,7 @@ use NaN\Application\Controller\{
 	Traits\ControllerTrait,
 };
 use NaN\Application\Middleware\{
+	Router\RouteHandler,
 	Router\RoutesCollection,
 	Router\Route,
 };
@@ -47,7 +48,9 @@ describe('App', function () {
 		$app = new App(
 			new Container(),
 			new RoutesCollection(
-				new Route('/', function (PsrServerRequestInterface $request) {
+				new Route('/', new RouteHandler(function (
+					PsrServerRequestInterface $request,
+				) {
 					expect($request->getAttribute(PsrContainerInterface::class))->toBeNull();
 
 					$rsp = new Response();
@@ -55,7 +58,7 @@ describe('App', function () {
 					$rsp->getBody()->write('good');
 
 					return $rsp;
-				}),
+				})),
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/');
@@ -72,7 +75,10 @@ describe('App', function () {
 				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
 			new RoutesCollection(
-				new Route('/{id}', function (PsrResponseFactoryInterface $factory, $id) {
+				new Route('/{id}', new RouteHandler(function (
+					PsrResponseFactoryInterface $factory,
+					$id,
+				) {
 					expect($id)->toBe('1');
 
 					$rsp = $factory->createResponse();
@@ -80,7 +86,7 @@ describe('App', function () {
 					$rsp->getBody()->write('good');
 
 					return $rsp;
-				}),
+				})),
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/1');
@@ -124,7 +130,7 @@ describe('App', function () {
 				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
 			new RoutesCollection(
-				new Route('/{id}', TestController::class),
+				new Route('/{id}', new TestController()),
 			),
 		);
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/123');

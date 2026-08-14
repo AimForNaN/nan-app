@@ -2,17 +2,7 @@
 
 namespace NaN\Application\Middleware\Router;
 
-use NaN\Collections\Middleware\MiddlewareCollection;
-use NaN\Http\{
-	ResponseFactory,
-	ServerRequest,
-};
-use Psr\Container\{
-	ContainerExceptionInterface as PsrContainerExceptionInterface,
-	NotFoundExceptionInterface as PsrNotFoundExceptionInterface,
-};
 use Psr\Http\{
-	Message\ResponseFactoryInterface as PsrResponseFactoryInterface,
 	Message\ResponseInterface as PsrResponseInterface,
 	Message\ServerRequestInterface as PsrServerRequestInterface,
 	Server\MiddlewareInterface as PsrMiddlewareInterface,
@@ -22,59 +12,27 @@ use Psr\Http\{
 readonly class Route implements PsrMiddlewareInterface {
 	public function __construct(
 		public string $path,
-		public \Closure|string|null $handler = null,
+		public PsrMiddlewareInterface $handler,
 		public ?string $name = null,
-		public ?PsrMiddlewareInterface $middleware = null,
 	) {
 		if (empty($this->path)) {
-			throw new \InvalidArgumentException('Path cannot be empty!');
+			throw new \ValueError('Path cannot be empty!');
 		}
 	}
 
-	public function matches(string $path): bool {
-		if ($path === $this->path) {
-			return true;
-		}
-
-		$pattern = new RoutePattern($this->path);
-		$pattern->compile();
-		return $pattern->matches($path);
-	}
-
-	public function matchesRequest(PsrServerRequestInterface $request): bool {
-		return $this->matches($request->getUri()->getPath());
-	}
-
-	/**
-	 * @throws PsrContainerExceptionInterface
-	 * @throws PsrNotFoundExceptionInterface
-	 * @throws \ReflectionException
-	 */
 	public function process(
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,
 	): PsrResponseInterface {
-		if (\is_null($this->handler)) {
-			$response_factory = ServerRequest::getServiceFromRequest(
-				PsrResponseFactoryInterface::class,
-				$request,
-				ResponseFactory::class,
-			);
+		$pattern = new RoutePattern($this->path);
 
-			return $response_factory->createResponse(501);
-		}
+		$pattern->compile();
+		$pattern->matches($request->getUri()->getPath());
 
-		$middleware = [];
+		$values = $pattern->getMatches();
+		$request = $request->withQueryParams($values + $request->getQueryParams());
 
-		if ($this->middleware instanceof PsrMiddlewareInterface) {
-			$middleware[] = $this->middleware;
-		}
-
-		$middleware[] = new RouteHandler($this);
-
-		$middleware = new MiddlewareCollection(...$middleware);
-
-		return $middleware->process($request, $handler);
+		return $this->handler->process($request, $handler);
 	}
 
 	/**

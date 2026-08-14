@@ -3,14 +3,10 @@
 namespace NaN\Application\Middleware\Router;
 
 use NaN\Collections\Collection;
-use Psr\Container\{
-	ContainerExceptionInterface as PsrContainerExceptionInterface,
-	NotFoundExceptionInterface as PsrNotFoundExceptionInterface,
-};
-use Psr\Http\Message\ServerRequestInterface as PsrServerRequestInterface;
-use Psr\Http\Server\{
-	MiddlewareInterface as PsrMiddlewareInterface,
-	RequestHandlerInterface as PsrRequestHandlerInterface,
+use Psr\Http\{
+	Message\ServerRequestInterface as PsrServerRequestInterface,
+	Server\MiddlewareInterface as PsrMiddlewareInterface,
+	Server\RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
 /**
@@ -74,11 +70,6 @@ class RoutesCollection extends Collection implements PsrMiddlewareInterface {
 		return $this->_named_routes[$name] ?? null;
 	}
 
-	/**
-	 * @throws PsrContainerExceptionInterface
-	 * @throws PsrNotFoundExceptionInterface
-	 * @throws \ReflectionException
-	 */
 	public function process(
 		PsrServerRequestInterface $request,
 		PsrRequestHandlerInterface $handler,

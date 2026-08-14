@@ -2,6 +2,8 @@
 
 use NaN\Application\Middleware\Router\{
 	Route,
+	RouteHandler,
+	RoutePattern,
 	RoutesCollection,
 };
 use NaN\Http\{
@@ -15,7 +17,20 @@ if (!\function_exists('getallheaders')) {
 	}
 }
 
+/**
+ * @BeforeMethods({
+ *     "benchParamNanRoutesArrayInsert",
+ *     "benchParamNanRouterInsertManual",
+ *     "benchStaticNanRoutesArrayInsert",
+ *     "benchStaticNanRouterInsertManual"
+ * })
+ */
 class RouterBench {
+	private array $__param_routes_array = [];
+	private array $__static_routes_array = [];
+	private RoutesCollection $__param_routes_collection;
+	private RoutesCollection $__static_routes_collection;
+
 	/**
 	 * @Iterations(20)
 	 * @Revs(10)
@@ -25,12 +40,12 @@ class RouterBench {
 		$routes = [];
 
 		for ($x = 0; $x < 1000; $x++) {
-			$routes[] = new Route('/param/' . $x . '/{id}', function ($id) {
+			$routes[] = new Route('/param/' . $x . '/{id}', new RouteHandler(function ($id) {
 				return new Response(200);
-			});
+			}));
 		}
 
-		return $routes;
+		return $this->__param_routes_array = $routes;
 	}
 
 	/**
@@ -41,13 +56,13 @@ class RouterBench {
 	public function benchParamNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield new Route('/param/' . $x . '/{id}', function ($id) {
+				yield new Route('/param/' . $x . '/{id}', new RouteHandler(function ($id) {
 					return new Response(200);
-				});
+				}));
 			}
 		};
 
-		return new RoutesCollection(...$generator());
+		return $this->__param_routes_collection = new RoutesCollection(...$generator());
 	}
 
 	/**
@@ -60,12 +75,12 @@ class RouterBench {
 
 		for ($x = 0; $x < 1000; $x++) {
 			$path = '/param/' . $x . '/1';
-			$routes[$path] = new Route($path, function ($id) {
+			$routes[$path] = new Route($path, new RouteHandler(function ($id) {
 				return new Response(200);
-			});
+			}));
 		}
 
-		return $routes;
+		return $this->__static_routes_array = $routes;
 	}
 
 	/**
@@ -76,13 +91,13 @@ class RouterBench {
 	public function benchStaticNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield new Route('/param/' . $x . '/1', function ($id) {
+				yield new Route('/param/' . $x . '/1', new RouteHandler(function ($id) {
 					return new Response(200);
-				});
+				}));
 			}
 		};
 
-		return new RoutesCollection(...$generator());
+		return $this->__static_routes_collection = new RoutesCollection(...$generator());
 	}
 
 	/**
@@ -91,7 +106,7 @@ class RouterBench {
 	 * @Warmup(1)
 	 */
 	public function benchParamNanRouterLookup(): void {
-		$routes = $this->benchParamNanRouterInsertManual();
+		$routes = $this->__param_routes_collection;
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 		$route = $routes->match($request->getUri()->getPath());
 	}
@@ -102,10 +117,33 @@ class RouterBench {
 	 * @Warmup(1)
 	 */
 	public function benchParamNanRoutesArrayLookup(): void {
-		$routes = $this->benchParamNanRoutesArrayInsert();
+		$routes = $this->__param_routes_array;
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 
-		\array_any($routes, fn($route) => $route->matchesRequest($request));
+		\array_any($routes, function ($route) use ($request) {
+			$path = $request->getUri()->getPath();
+			$request_parts = \array_filter(\explode('/', ltrim($path, '/')));
+			$route_parts = \array_filter(\explode('/', ltrim($route->path, '/')));
+
+			foreach ($request_parts as $idx => $request_part) {
+				$route_part = $route_parts[$idx] ?? null;
+
+				if (\is_null($route_part)) {
+					return false;
+				}
+
+				if (RoutePattern::checkParameters($route_part)) {
+					$request_part = '#';
+					$route_part = '#';
+				}
+
+				if ($request_part !== $route_part) {
+					return false;
+				}
+			}
+
+			return true;
+		});
 	}
 
 	/**
@@ -114,7 +152,7 @@ class RouterBench {
 	 * @Warmup(1)
 	 */
 	public function benchStaticNanRouterLookup(): void {
-		$routes = $this->benchStaticNanRouterInsertManual();
+		$routes = $this->__static_routes_collection;
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 		$route = $routes->match($request->getUri()->getPath());
 	}
@@ -125,9 +163,9 @@ class RouterBench {
 	 * @Warmup(1)
 	 */
 	public function benchStaticNanRoutesArrayLookup(): void {
-		$routes = $this->benchStaticNanRoutesArrayInsert();
+		$routes = $this->__static_routes_array;
 		$request = new ServerRequestFactory()->createServerRequest('GET', '/param/' . rand(0, 999) . '/1', getallheaders());
 
-		\array_any($routes, fn($route) => $route->matchesRequest($request));
+		\array_any($routes, fn($route) => $route->path === $request->getUri()->getPath());
 	}
 }

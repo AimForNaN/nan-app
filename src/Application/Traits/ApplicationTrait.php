@@ -2,7 +2,7 @@
 
 namespace NaN\Application\Traits;
 
-use NaN\Http\RequestHandlers\NotFoundRequestHandler;
+use NaN\Http\Request\Handlers\NotFoundRequestHandler;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\{
 	Message\ResponseInterface as PsrResponseInterface,

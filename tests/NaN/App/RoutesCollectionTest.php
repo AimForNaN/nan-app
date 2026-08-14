@@ -4,11 +4,12 @@ use NaN\Application\Middleware\{
 	Router\RoutesCollection,
 	Router\Route,
 };
+use NaN\Collections\Middleware\MiddlewareCollection;
 
 describe('RoutesCollection', function () {
 	test('Contains', function () {
 		$routes = new RoutesCollection(
-			new Route('/nested/deep'),
+			new Route('/nested/deep', new MiddlewareCollection()),
 		);
 
 		expect($routes->contains($routes->match('/nested/deep')))->toBeTrue();
@@ -16,10 +17,10 @@ describe('RoutesCollection', function () {
 
 	test('Count', function () {
 		$routes = new RoutesCollection(
-			new Route('/'),
-			new Route('/nested'),
-			new Route('/nested/deep'),
-			new Route('/nested/deep/deeper'),
+			new Route('/', new MiddlewareCollection()),
+			new Route('/nested', new MiddlewareCollection()),
+			new Route('/nested/deep', new MiddlewareCollection()),
+			new Route('/nested/deep/deeper', new MiddlewareCollection()),
 		);
 
 		expect($routes)
@@ -29,13 +30,13 @@ describe('RoutesCollection', function () {
 		;
 
 		$routes = new RoutesCollection(
-			new Route('/'),
-			new Route('/{id}'),
-			new Route('/{id}/deep'),
-			new Route('/{id}/deep/deeper'),
-			new Route('/nested'),
-			new Route('/nested/deep'),
-			new Route('/{name}/deep/deeper'),
+			new Route('/', new MiddlewareCollection()),
+			new Route('/{id}', new MiddlewareCollection()),
+			new Route('/{id}/deep', new MiddlewareCollection()),
+			new Route('/{id}/deep/deeper', new MiddlewareCollection()),
+			new Route('/nested', new MiddlewareCollection()),
+			new Route('/nested/deep', new MiddlewareCollection()),
+			new Route('/{name}/deep/deeper', new MiddlewareCollection()),
 		);
 
 		expect($routes)
@@ -46,15 +47,15 @@ describe('RoutesCollection', function () {
 	});
 
 	test('Get named route', function () {
-		$route = new Route('/', null, 'home');
+		$route = new Route('/', new MiddlewareCollection(), 'home');
 		$routes = new RoutesCollection($route);
 
 		expect($route)->toEqual($routes->matchName('home'));
 	});
 
 	test('Static route priority', function () {
-		$nested_route = new Route('/nested');
-		$parameterized_route = new Route('/{id}');
+		$nested_route = new Route('/nested', new MiddlewareCollection());
+		$parameterized_route = new Route('/{id}', new MiddlewareCollection());
 		$routes = new RoutesCollection(
 			$parameterized_route,
 			$nested_route,

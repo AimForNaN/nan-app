@@ -9,11 +9,15 @@ use NaN\Application\{
 use NaN\Collections\Middleware\MiddlewareCollection;
 use NaN\DI\Container;
 use NaN\Http\{
-	Message,ServerRequestFactory,
+	Message,
+	ResponseFactory,
+	ServerRequestFactory,
 	Streams\OutputStream,
 };
+use NaN\DI\DelegatesContainer;
 use Psr\Container\ContainerInterface as PsrContainerInterface;
 use Psr\Http\{
+	Message\ResponseFactoryInterface as PsrResponseFactoryInterface,
 	Message\ResponseInterface as PsrResponseInterface,
 	Message\ServerRequestInterface as PsrServerRequestInterface,
 	Server\MiddlewareInterface as PsrMiddlewareInterface,
@@ -27,11 +31,7 @@ implements
 {
 	use Traits\ApplicationTrait;
 
-	public function __construct(
-		public PsrContainerInterface $services = new Container(),
-		public PsrMiddlewareInterface $middleware = new MiddlewareCollection(),
-	) {
-	}
+	public PsrContainerInterface $services;
 
 	/**
 	 * Exceptions and errors should be handled on a global level
@@ -39,12 +39,27 @@ implements
 	 *
 	 * @throws \JsonException
 	 */
-	public function run(): void {
-		if ($this->services->has(PsrServerRequestInterface::class)) {
-			$req = $this->services->get(PsrServerRequestInterface::class);
-		}
+	public function __construct(
+		PsrContainerInterface $services = new Container(),
+		public PsrMiddlewareInterface $middleware = new MiddlewareCollection(),
+	) {
+		$this->services = new DelegatesContainer()
+			->withDelegates(
+				$services,
+				new Container([
+					PsrResponseFactoryInterface::class => new ResponseFactory(),
+					PsrServerRequestInterface::class => function () {
+						return new ServerRequestFactory()
+							->createServerRequest('', '', $_SERVER)
+						;
+					},
+				]),
+			)
+		;
+	}
 
-		$req ??= new ServerRequestFactory()->createServerRequest('', '', $_SERVER);
+	public function run(): void {
+		$req = $this->services->get(PsrServerRequestInterface::class);
 		$rsp = $this->handle($req);
 
 		static::sendResponse($rsp);
