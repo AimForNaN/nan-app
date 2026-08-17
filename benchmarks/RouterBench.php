@@ -2,7 +2,7 @@
 
 use NaN\Application\Middleware\Router\{
 	Route,
-	RouteHandler,
+	ClosureMiddleware,
 	RoutePattern,
 	RoutesCollection,
 };
@@ -40,7 +40,7 @@ class RouterBench {
 		$routes = [];
 
 		for ($x = 0; $x < 1000; $x++) {
-			$routes[] = new Route('/param/' . $x . '/{id}', new RouteHandler(function ($id) {
+			$routes[] = new Route('/param/' . $x . '/{id}', new ClosureMiddleware(function ($id) {
 				return new Response(200);
 			}));
 		}
@@ -56,7 +56,7 @@ class RouterBench {
 	public function benchParamNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield new Route('/param/' . $x . '/{id}', new RouteHandler(function ($id) {
+				yield new Route('/param/' . $x . '/{id}', new ClosureMiddleware(function ($id) {
 					return new Response(200);
 				}));
 			}
@@ -75,7 +75,7 @@ class RouterBench {
 
 		for ($x = 0; $x < 1000; $x++) {
 			$path = '/param/' . $x . '/1';
-			$routes[$path] = new Route($path, new RouteHandler(function ($id) {
+			$routes[$path] = new Route($path, new ClosureMiddleware(function ($id) {
 				return new Response(200);
 			}));
 		}
@@ -91,7 +91,7 @@ class RouterBench {
 	public function benchStaticNanRouterInsertManual(): RoutesCollection {
 		$generator = function () {
 			for ($x = 0; $x < 1000; $x++) {
-				yield new Route('/param/' . $x . '/1', new RouteHandler(function ($id) {
+				yield new Route('/param/' . $x . '/1', new ClosureMiddleware(function ($id) {
 					return new Response(200);
 				}));
 			}

@@ -5,7 +5,7 @@ use NaN\Application\Controller\{
 	Traits\ControllerTrait,
 };
 use NaN\Application\Middleware\{
-	Router\RouteHandler,
+	ClosureMiddleware,
 	Router\RoutesCollection,
 	Router\Route,
 };
@@ -48,7 +48,7 @@ describe('App', function () {
 		$app = new App(
 			new Container(),
 			new RoutesCollection(
-				new Route('/', new RouteHandler(function (
+				new Route('/', new ClosureMiddleware(function (
 					PsrServerRequestInterface $request,
 				) {
 					expect($request->getAttribute(PsrContainerInterface::class))->toBeNull();
@@ -75,7 +75,7 @@ describe('App', function () {
 				PsrResponseFactoryInterface::class => new ResponseFactory(),
 			]),
 			new RoutesCollection(
-				new Route('/{id}', new RouteHandler(function (
+				new Route('/{id}', new ClosureMiddleware(function (
 					PsrResponseFactoryInterface $factory,
 					$id,
 				) {

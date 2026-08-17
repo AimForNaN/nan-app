@@ -2,7 +2,7 @@
 
 use NaN\Application\Middleware\Router\{
 	Route,
-	RouteHandler,
+	ClosureMiddleware,
 	RoutesCollection,
 };
 use NaN\Application\NativeApplication as App;
@@ -27,7 +27,7 @@ class AppBench {
 		$_SERVER['REQUEST_URI'] = '/';
 
 		$router = new RoutesCollection(
-			new Route('/', new RouteHandler(function () {
+			new Route('/', new ClosureMiddleware(function () {
 				return new Response();
 			})),
 		);

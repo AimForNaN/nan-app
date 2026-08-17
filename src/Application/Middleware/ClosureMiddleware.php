@@ -1,6 +1,6 @@
 <?php
 
-namespace NaN\Application\Middleware\Router;
+namespace NaN\Application\Middleware;
 
 use NaN\DI\{
 	Arguments,
@@ -18,7 +18,7 @@ use Psr\Http\{
 	Server\RequestHandlerInterface as PsrRequestHandlerInterface,
 };
 
-readonly class RouteHandler implements PsrMiddlewareInterface {
+readonly class ClosureMiddleware implements PsrMiddlewareInterface {
 	public function __construct(
 		private \Closure $__callback,
 	) {
